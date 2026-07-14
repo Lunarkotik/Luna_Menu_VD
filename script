@@ -1,0 +1,146 @@
+( function (...) local Players = game:GetService("\080\108\097\121\101\114\115") local _IllllIlIII = game:GetService("\085\115\101\114\073\110\112\117\116\083\101\114\118\105\099\101") local RunService = game:GetService("\082\117\110\083\101\114\118\105\099\101") local _llIlIlIIIl = game:GetService("\087\111\114\107\115\112\097\099\101") local Lighting = game:GetService("\076\105\103\104\116\105\110\103") local _llIIIIIIIl = game:GetService("\086\105\114\116\117\097\108\073\110\112\117\116\077\097\110\097\103\101\114") local _IllIIIIlIl = game:GetService("\067\111\114\101\071\117\105") local _IIlIlllIII = Players.LocalPlayer local _IIlIllIIIl = nil local _lIIIIIlIlI, _ = pcall( function () if gethui then _IIlIllIIIl = gethui() elseif typeof(syn) == "\116\097\098\108\101" and syn.protect_gui then local _IlllIIlIlI = Instance.new("\070\111\108\100\101\114") syn.protect_gui(_IlllIIlIlI) _IlllIIlIlI.Parent = _IllIIIIlIl _IIlIllIIIl = _IlllIIlIlI elseif cloneref then _IIlIllIIIl = cloneref(_IllIIIIlIl) else _IIlIllIIIl = _IllIIIIlIl end
+ end
+ ) if not _IIlIllIIIl then _IIlIllIIIl = _IIlIlllIII:WaitForChild("\080\108\097\121\101\114\071\117\105", 0xA) end
+ local _llIllIlIlI = {} _llIllIlIlI.Theme = { Background = Color3.fromRGB(0x12, 0x14, 0x1E), Panel = Color3.fromRGB(0x19, 0x1C, 0x2A), _IlllIllllI = Color3.fromRGB(0x23, 0x26, 0x3A), Accent = Color3.fromRGB(0x96, 0x5A, 0xFF), _lIIIIIIlII = Color3.fromRGB(0xF5, 0xF5, 0xFF), InactiveTab = Color3.fromRGB(0x1E, 0x20, 0x30) } local _IlIIIIllIl = { PlayerESP = false, GeneratorESP = false, Fullbright = false, NoEffect = false, Crosshair = false, NoFog = false, NoShadows = false, AutoSkill = false, Moonwalk = false, Noclip = false, SpeedHack = false, Speed = 0x10 } local _lIIIlIIlll = { Brightness = Lighting.Brightness, ClockTime = Lighting.ClockTime, GlobalShadows = Lighting.GlobalShadows, Ambient = Lighting.Ambient, OutdoorAmbient = Lighting.OutdoorAmbient, FogStart = Lighting.FogStart, FogEnd = Lighting.FogEnd } local _IIlllIlIIl = { Killer = Color3.fromRGB(0xFF, 0x46, 0x46), Survivor = Color3.fromRGB(0x46, 0xFF, 0x78), Generator = Color3.fromRGB(0xAA, 0x0, 0xFF) } local _llIIIIIlIl = {} local _IIlIIIlIIl = {} local _lIIIIlIllI = {} local _lIIllIIllI = nil local _lIllIIIIIl = false local _IIIlIlIIII = false local _IlIIlIIIlI = false local _IllllIIlll = nil local _IIllIllIlI = nil local _IIlllIIIII = 0x0 local _lIIllllIIl = 0xF if _IIlIllIIIl:FindFirstChild("\076\117\110\097\077\101\110\117") then _IIlIllIIIl:FindFirstChild("\076\117\110\097\077\101\110\117"):Destroy() end
+ local _IIlIllIlII = Instance.new("\083\099\114\101\101\110\071\117\105") _IIlIllIlII.Name = "\076\117\110\097\077\101\110\117" _IIlIllIlII.ResetOnSpawn = false _IIlIllIlII.Parent = _IIlIllIIIl local _lIIIllIlII = Instance.new("\070\114\097\109\101", _IIlIllIlII) _lIIIllIlII.Size = UDim2.fromOffset(0x258, 0x1F4) _lIIIllIlII.Position = UDim2.new(.0x5, -0x12C, .0x5, -0xFA) _lIIIllIlII.BackgroundColor3 = _llIllIlIlI.Theme.Background local _lIlIIlIIlI = Instance.new("\085\073\067\111\114\110\101\114", _lIIIllIlII) _lIlIIlIIlI.CornerRadius = UDim.new(0x0, 0x14) local _llllIllllI = Instance.new("\084\101\120\116\076\097\098\101\108", _lIIIllIlII) _llllIllllI.Size = UDim2.new(0x0, 0xC8, 0x0, 0x3C) _llllIllllI.Position = UDim2.new(0x0, 0x14, 0x0, 0x0) _llllIllllI.BackgroundTransparency = 0x1 _llllIllllI.Text = "\55356\57113\032\076\117\110\097\032\077\101\110\117" _llllIllllI.TextColor3 = _llIllIlIlI.Theme.Text _llllIllllI.Font = Enum.Font.GothamBold _llllIllllI.TextSize = 0x18 _llllIllllI.TextXAlignment = Enum.TextXAlignment.Left local _llllIIIlIl = Instance.new("\070\114\097\109\101", _lIIIllIlII) _llllIIIlIl.Size = UDim2.new(0x0, 0xFA, 0x0, 0x28) _llllIIIlIl.Position = UDim2.new(0x1, -0x10E, 0x0, 0xA) _llllIIIlIl.BackgroundTransparency = 0x1 local _IIIllllIIl = Instance.new("\085\073\076\105\115\116\076\097\121\111\117\116", _llllIIIlIl) _IIIllllIIl.FillDirection = Enum.FillDirection.Horizontal _IIIllllIIl.HorizontalAlignment = Enum.HorizontalAlignment.Right _IIIllllIIl.VerticalAlignment = Enum.VerticalAlignment.Center _IIIllllIIl.SortOrder = Enum.SortOrder.LayoutOrder _IIIllllIIl.Padding = UDim.new(0x0, 0xA) local _IllIIlllIl = {} local _llIIIllIll = nil local function _IllIIIlIIl(name) local _lIIllIllll = Instance.new("\083\099\114\111\108\108\105\110\103\070\114\097\109\101", _lIIIllIlII) _lIIllIllll.Name = name .. "\080\097\103\101" _lIIllIllll.Size = UDim2.new(0x1, -0x28, 0x1, -0x5A) _lIIllIllll.Position = UDim2.fromOffset(0x14, 0x4B) _lIIllIllll.BackgroundTransparency = 0x1 _lIIllIllll.ScrollBarThickness = 0x5 _lIIllIllll.Visible = false local _lIIllllllI = Instance.new("\085\073\076\105\115\116\076\097\121\111\117\116", _lIIllIllll) _lIIllllllI.Padding = UDim.new(0x0, 0xA) _lIIllllllI.SortOrder = Enum.SortOrder.LayoutOrder _lIIllllllI:GetPropertyChangedSignal("\065\098\115\111\108\117\116\101\067\111\110\116\101\110\116\083\105\122\101"):Connect( function () _lIIllIllll.CanvasSize = UDim2.new(0x0, 0x0, 0x0, _lIIllllllI.AbsoluteContentSize.Y + 0xA) end
+ ) return _lIIllIllll end
+ local function _llllIIlIlI(name) if _llIIIllIll == name then return end
+ for tabName, tabData in pairs(_IllIIlllIl) do if tabName == name then tabData.Page.Visible = true tabData.Button.BackgroundColor3 = _llIllIlIlI.Theme.Accent tabData.Button.TextColor3 = _llIllIlIlI.Theme.Text else tabData.Page.Visible = false tabData.Button.BackgroundColor3 = _llIllIlIlI.Theme.InactiveTab tabData.Button.TextColor3 = Color3.fromRGB(0x96, 0x96, 0xAA) end
+ end
+ _llIIIllIll = name end
+ function _llIllIlIlI:Tab(name, layoutOrder) local _llIlIllIll = _IllIIIlIIl(name) local _IlllIllllI = Instance.new("\084\101\120\116\066\117\116\116\111\110", _llllIIIlIl) _IlllIllllI.Size = UDim2.new(0x0, 0x64, 0x0, 0x20) _IlllIllllI.BackgroundColor3 = _llIllIlIlI.Theme.InactiveTab _IlllIllllI.Text = name _IlllIllllI.TextColor3 = Color3.fromRGB(0x96, 0x96, 0xAA) _IlllIllllI.Font = Enum.Font.GothamBold _IlllIllllI.TextSize = 0xE _IlllIllllI.LayoutOrder = layoutOrder Instance.new("\085\073\067\111\114\110\101\114", _IlllIllllI).CornerRadius = UDim.new(0x0, 0x8) _IlllIllllI.MouseButton1Click:Connect( function () _llllIIlIlI(name) end
+ ) _IllIIlllIl[name] = { _llIlIllIll = _llIlIllIll, _IlllIllllI = _IlllIllllI } end
+ function _llIllIlIlI:Category(tabName, name) local _IIIlIlIIlI = _IllIIlllIl[tabName] and _IllIIlllIl[tabName].Page if not _IIIlIlIIlI then return end
+ local _IlllIlllll = Instance.new("\084\101\120\116\076\097\098\101\108", _IIIlIlIIlI) _IlllIlllll.Size = UDim2.new(0x1, 0x0, 0x0, 0x23) _IlllIlllll.BackgroundTransparency = 0x1 _IlllIlllll.Text = "\9473\9473\9473\9473\9473\9473\9473\9473\032" .. name .. "\032\9473\9473\9473\9473\9473\9473\9473\9473" _IlllIlllll.TextColor3 = _llIllIlIlI.Theme.Accent _IlllIlllll.Font = Enum.Font.GothamBold _IlllIlllll.TextSize = 0x10 end
+ function _llIllIlIlI:Toggle(tabName, name, callback) local _IIIlIlIIlI = _IllIIlllIl[tabName] and _IllIIlllIl[tabName].Page if not _IIIlIlIIlI then return nil end
+ local _IlllIllllI = Instance.new("\084\101\120\116\066\117\116\116\111\110", _IIIlIlIIlI) _IlllIllllI.Size = UDim2.new(0x1, 0x0, 0x0, 0x32) _IlllIllllI.BackgroundColor3 = _llIllIlIlI.Theme.Button _IlllIllllI.Text = name .. "\032\032\079\070\070" _IlllIllllI.TextColor3 = _llIllIlIlI.Theme.Text _IlllIllllI.Font = Enum.Font.GothamBold _IlllIllllI.TextSize = 0x12 Instance.new("\085\073\067\111\114\110\101\114", _IlllIllllI).CornerRadius = UDim.new(0x0, 0xE) local _llIIlIlllI = false _IlllIllllI.MouseButton1Click:Connect( function () _llIIlIlllI = not _llIIlIlllI _IlllIllllI.Text = name .. (_llIIlIlllI and "\032\032\079\078" or "\032\032\079\070\070") _IlllIllllI.BackgroundColor3 = _llIIlIlllI and _llIllIlIlI.Theme.Accent or _llIllIlIlI.Theme.Button if callback then callback(_llIIlIlllI) end
+ end
+ ) return _IlllIllllI end
+ function _llIllIlIlI:CreateDynamicSlider(_IIIlIlIIlI, name, min, max, startValue, callback) local _lIllIlIlII = Instance.new("\070\114\097\109\101", _IIIlIlIIlI) _lIllIlIlII.Name = "\068\121\110\097\109\105\099\083\108\105\100\101\114\095" .. name _lIllIlIlII.Size = UDim2.new(0x1, 0x0, 0x0, 0x50) _lIllIlIlII.BackgroundColor3 = _llIllIlIlI.Theme.Button Instance.new("\085\073\067\111\114\110\101\114", _lIllIlIlII) local _lIIIIIIlII = Instance.new("\084\101\120\116\076\097\098\101\108", _lIllIlIlII) _lIIIIIIlII.Size = UDim2.new(0x1, 0x0, 0x0, 0x1E) _lIIIIIIlII.BackgroundTransparency = 0x1 _lIIIIIIlII.Text = name .. "\032\058\032" .. startValue _lIIIIIIlII.TextColor3 = _llIllIlIlI.Theme.Text _lIIIIIIlII.Font = Enum.Font.GothamBold _lIIIIIIlII.TextSize = 0x12 local _IIIIIIllIl = Instance.new("\070\114\097\109\101", _lIllIlIlII) _IIIIIIllIl.Size = UDim2.new(.0x55, 0x0, 0x0, 0x8) _IIIIIIllIl.Position = UDim2.new(.0x4B, 0x0, 0x0, 0x37) _IIIIIIllIl.BackgroundColor3 = Color3.fromRGB(0x50, 0x50, 0x64) Instance.new("\085\073\067\111\114\110\101\114", _IIIIIIllIl) local _IllllIllIl = Instance.new("\070\114\097\109\101", _IIIIIIllIl) _IllllIllIl.Size = UDim2.new((startValue - min) / (max - min), 0x0, 0x1, 0x0) _IllllIllIl.BackgroundColor3 = _llIllIlIlI.Theme.Accent Instance.new("\085\073\067\111\114\110\101\114", _IllllIllIl) local _IIlllIlIlI = false local function _lIIIlIlIll(v) v = math.clamp(v, min, max) _IllllIllIl.Size = UDim2.new((v - min) / (max - min), 0x0, 0x1, 0x0) _lIIIIIIlII.Text = name .. "\032\058\032" .. math.floor(v) if callback then callback(v) end
+ end
+ _IIIIIIllIl.InputBegan:Connect( function (i) if i.UserInputType == Enum.UserInputType.MouseButton1 then _IIlllIlIlI = true end
+ end
+ ) _IllllIlIII.InputChanged:Connect( function (i) if _IIlllIlIlI and i.UserInputType == Enum.UserInputType.MouseMovement then local _IIllIIIIII = (i.Position.X - _IIIIIIllIl.AbsolutePosition.X) / _IIIIIIllIl.AbsoluteSize.X _lIIIlIlIll(min + (max - min) * _IIllIIIIII) end
+ end
+ ) _IllllIlIII.InputEnded:Connect( function (i) if i.UserInputType == Enum.UserInputType.MouseButton1 then _IIlllIlIlI = false end
+ end
+ ) return _lIllIlIlII end
+ local function _IIIlIIIIII(_IllIllllIl) local _lIIlIllIII = _IllIllllIl.Team and _IllIllllIl.Team.Name:lower() or "" if _lIIlIllIII:find("\107\105\108\108\101\114") then return _IIlllIlIIl.Killer end
+ return _IIlllIlIIl.Survivor end
+ local function _IIIIlllllI(plr) if plr == _IIlIlllIII then return end
+ local function _lIlIllllII(_lIlIIlllll) local _IIIIlIlIII = _lIlIIlllll:WaitForChild("\072\101\097\100", 0x5) if not _IIIIlIlIII then return end
+ local _lIIIIIlIII = _lIlIIlllll:FindFirstChild("\069\083\080\095\072\076") or Instance.new("\072\105\103\104\108\105\103\104\116") _lIIIIIlIII.Name = "\069\083\080\095\072\076" _lIIIIIlIII.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop _lIIIIIlIII.FillTransparency = 0x1 _lIIIIIlIII.OutlineTransparency = 0x0 _lIIIIIlIII.Enabled = _IlIIIIllIl.PlayerESP _lIIIIIlIII.Parent = _lIlIIlllll local _lIllIllIII = _IIIIlIlIII:FindFirstChild("\069\083\080\095\084\065\071") if not _lIllIllIII then local _lIIlIllllI = Instance.new("\066\105\108\108\098\111\097\114\100\071\117\105") _lIIlIllllI.Name = "\069\083\080\095\084\065\071" _lIIlIllllI.Size = UDim2.new(0x0, 0x96, 0x0, 0x1E) _lIIlIllllI.AlwaysOnTop = true _lIIlIllllI.Adornee = _IIIIlIlIII _lIIlIllllI.StudsOffset = Vector3.new(0x0, 2.3, 0x0) _lIIlIllllI.Enabled = _IlIIIIllIl.PlayerESP _lIIlIllllI.Parent = _IIIIlIlIII local _IIIIIlllII = Instance.new("\084\101\120\116\076\097\098\101\108") _IIIIIlllII.Size = UDim2.new(0x1, 0x0, 0x1, 0x0) _IIIIIlllII.BackgroundTransparency = 0x1 _IIIIIlllII.Font = Enum.Font.GothamBold _IIIIIlllII.TextSize = 0xE _IIIIIlllII.Text = plr.Name _IIIIIlllII.Parent = _lIIlIllllI _llIIIIIlIl[plr] = { _lIlIIlllll = _lIlIIlllll, _lIIIIIlIII = _lIIIIIlIII, label = _IIIIIlllII, gui = _lIIlIllllI } end
+ end
+ if plr.Character then _lIlIllllII(plr.Character) end
+ plr.CharacterAdded:Connect( function (_lIlIIlllll) task.wait(0.5) _lIlIllllII(_lIlIIlllll) end
+ ) end
+ local function _lIllIIlIIl(obj) if obj.Name ~= "\071\101\110\101\114\097\116\111\114" then return nil end
+ local _IIlllIlIll = obj:IsA("\077\111\100\101\108") and obj or obj:FindFirstAncestorOfClass("\077\111\100\101\108") if not _IIlllIlIll then return nil end
+ local _IIIIIlIllI = _IIlllIlIll:FindFirstChildWhichIsA("\066\097\115\101\080\097\114\116") if not _IIIIIlIllI then return nil end
+ return _IIlllIlIll, _IIIIIlIllI end
+ local function _llIlIlIIII(obj) local _IIlllIlIll, _IIIIIlIllI = _lIllIIlIIl(obj) if not _IIlllIlIll or _IIlIIIlIIl[_IIlllIlIll] then return end
+ local _lIIIIIlIII = Instance.new("\072\105\103\104\108\105\103\104\116") _lIIIIIlIII.Name = "\071\069\078\095\072\076" _lIIIIIlIII.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop _lIIIIIlIII.FillTransparency = 0x1 _lIIIIIlIII.OutlineTransparency = 0x0 _lIIIIIlIII.FillColor = _IIlllIlIIl.Generator _lIIIIIlIII.Enabled = _IlIIIIllIl.GeneratorESP _lIIIIIlIII.Parent = _IIlllIlIll local _lIIlIllllI = Instance.new("\066\105\108\108\098\111\097\114\100\071\117\105") _lIIlIllllI.Name = "\071\069\078\095\084\065\071" _lIIlIllllI.Size = UDim2.new(0x0, 0x78, 0x0, 0x1E) _lIIlIllllI.AlwaysOnTop = true _lIIlIllllI.Adornee = _IIIIIlIllI _lIIlIllllI.Enabled = _IlIIIIllIl.GeneratorESP _lIIlIllllI.Parent = _IIIIIlIllI local _IIIIIlllII = Instance.new("\084\101\120\116\076\097\098\101\108") _IIIIIlllII.Size = UDim2.new(0x1, 0x0, 0x1, 0x0) _IIIIIlllII.BackgroundTransparency = 0x1 _IIIIIlllII.Font = Enum.Font.GothamBold _IIIIIlllII.TextSize = 0xE _IIIIIlllII.TextColor3 = Color3.fromRGB(0xFF, 0xFF, 0xFF) _IIIIIlllII.Text = "\048\037" _IIIIIlllII.Parent = _lIIlIllllI _IIlIIIlIIl[_IIlllIlIll] = { _IIlllIlIll = _IIlllIlIll, _IIIIIlIllI = _IIIIIlIllI, label = _IIIIIlllII, _lIIIIIlIII = _lIIIIIlIII, gui = _lIIlIllllI } end
+ local function _lIIlIIIllI() local _IIIlIllIII = _llIlIlIIIl:FindFirstChild("\077\097\112") if not _IIIlIllIII then return end
+ for _, obj in ipairs(_IIIlIllIII:GetDescendants()) do _llIlIlIIII(obj) end
+ end
+ _llIlIlIIIl.DescendantAdded:Connect( function (obj) task.wait(0.2) _llIlIlIIII(obj) end
+ ) _llIlIlIIIl.DescendantRemoving:Connect( function (obj) local _IIlllIlIll = obj:IsA("\077\111\100\101\108") and obj or obj:FindFirstAncestorOfClass("\077\111\100\101\108") if _IIlllIlIll and _IIlIIIlIIl[_IIlllIlIll] then _IIlIIIlIIl[_IIlllIlIll] = nil end
+ end
+ ) local function _llIlllIlll(_llIIlIlllI) for _, data in pairs(_llIIIIIlIl) do if data.hl then data.hl.Enabled = _llIIlIlllI end
+ if data.gui then data.gui.Enabled = _llIIlIlllI end
+ end
+ end
+ local function _IllllIIlII(_llIIlIlllI) for _, data in pairs(_IIlIIIlIIl) do if data.hl then data.hl.Enabled = _llIIlIlllI end
+ if data.gui then data.gui.Enabled = _llIIlIlllI end
+ end
+ end
+ local function _lIlIIlllIl(_llIIlIlllI) if _llIIlIlllI then Lighting.Brightness = 0x3 Lighting.ClockTime = 0xE Lighting.Ambient = Color3.fromRGB(0xFF, 0xFF, 0xFF) Lighting.OutdoorAmbient = Color3.fromRGB(0xFF, 0xFF, 0xFF) else Lighting.Brightness = _lIIIlIIlll.Brightness Lighting.ClockTime = _lIIIlIIlll.ClockTime if not _IlIIIIllIl.NoShadows then Lighting.GlobalShadows = _lIIIlIIlll.GlobalShadows end
+ Lighting.Ambient = _lIIIlIIlll.Ambient Lighting.OutdoorAmbient = _lIIIlIIlll.OutdoorAmbient end
+ end
+ local function _llllIllllI(_llIIlIlllI) if _llIIlIlllI then Lighting.FogStart = 0xF423F Lighting.FogEnd = 0xF423F else Lighting.FogStart = _lIIIlIIlll.FogStart Lighting.FogEnd = _lIIIlIIlll.FogEnd end
+ end
+ local function _IllllIllIl(_llIIlIlllI) Lighting.GlobalShadows = not _llIIlIlllI end
+ local function _IIIIllllIl(_llIIlIlllI) for _, effect in ipairs(Lighting:GetChildren()) do if effect:IsA("\066\108\117\114\069\102\102\101\099\116") or effect:IsA("\068\101\112\116\104\079\102\070\105\101\108\100\069\102\102\101\099\116") then effect.Enabled = not _llIIlIlllI elseif effect:IsA("\065\116\109\111\115\112\104\101\114\101") then if _llIIlIlllI then effect.Density = 0x0 effect.Haze = 0x0 end
+ end
+ end
+ end
+ task.spawn( function () while true do task.wait(0.5) if _IlIIIIllIl.Fullbright then if Lighting.Brightness ~= 0x3 or Lighting.ClockTime ~= 0xE then _lIlIIlllIl(true) end
+ end
+ if _IlIIIIllIl.NoFog then if Lighting.FogEnd < 0x7A120 then _llllIllllI(true) end
+ end
+ if _IlIIIIllIl.NoShadows then if Lighting.GlobalShadows == true then _IllllIllIl(true) end
+ end
+ if _IlIIIIllIl.NoEffect then _IIIIllllIl(true) end
+ end
+ end
+ ) local function _llIlllIIII(_llIIlIlllI) if _llIIlIlllI then if not _lIIllIIllI then _lIIllIIllI = Instance.new("\083\099\114\101\101\110\071\117\105") _lIIllIIllI.Name = "\067\114\111\115\115\104\097\105\114" _lIIllIIllI.ResetOnSpawn = false _lIIllIIllI.Parent = _IIlIllIIIl local _llIllIlIlI = Instance.new("\070\114\097\109\101") _llIllIlIlI.Size = UDim2.new(0x0, 0x6, 0x0, 0x6) _llIllIlIlI.Position = UDim2.new(0.5, -0x3, 0.5, -0x3) _llIllIlIlI.BackgroundColor3 = Color3.fromRGB(0x0, 0xFF, 0x0) _llIllIlIlI.BorderSizePixel = 0x0 _llIllIlIlI.Parent = _lIIllIIllI Instance.new("\085\073\067\111\114\110\101\114", _llIllIlIlI).CornerRadius = UDim.new(0x1, 0x0) end
+ _lIIllIIllI.Enabled = true else if _lIIllIIllI then _lIIllIIllI.Enabled = false end
+ end
+ end
+ local function _llIlllIIIl(_lIlIIlllll) table.clear(_lIIIIlIllI) if not _lIlIIlllll then return end
+ for _, v in ipairs(_lIlIIlllll:GetDescendants()) do if v:IsA("\066\097\115\101\080\097\114\116") then table.insert(_lIIIIlIllI, v) end
+ end
+ end
+ local function _IIIllIlIlI(_llIIlIlllI) local _lIlIIlllll = _IIlIlllIII.Character if not _lIlIIlllll or not _IllllIIlll then return end
+ if _llIIlIlllI then _llIlllIIIl(_lIlIIlllll) else for _, _IIIIIlIllI in ipairs(_lIIIIlIllI) do if _IIIIIlIllI and _IIIIIlIllI.Parent then _IIIIIlIllI.CanCollide = true end
+ end
+ if _IIllIllIlI then _IIllIllIlI.Velocity = Vector3.new(0x0, 0x0, 0x0) _IIllIllIlI.RotVelocity = Vector3.new(0x0, 0x0, 0x0) end
+ _IllllIIlll.PlatformStand = false _IllllIIlll:ChangeState(Enum.HumanoidStateType.Running) end
+ end
+ local function _lIIllIlIII(_lIlIIlllll) _IllllIIlll = _lIlIIlllll:WaitForChild("\072\117\109\097\110\111\105\100", 0xA) _IIllIllIlI = _lIlIIlllll:WaitForChild("\072\117\109\097\110\111\105\100\082\111\111\116\080\097\114\116", 0xA) _llIlllIIIl(_lIlIIlllll) _lIlIIlllll.DescendantAdded:Connect( function (v) if v:IsA("\066\097\115\101\080\097\114\116") then table.insert(_lIIIIlIllI, v) end
+ end
+ ) _lIlIIlllll.DescendantRemoving:Connect( function (v) local _IIlIIIllII = table.find(_lIIIIlIllI, v) if _IIlIIIllII then table.remove(_lIIIIlIllI, _IIlIIIllII) end
+ end
+ ) if _IllllIIlll then _IllllIIlll.WalkSpeed = _IlIIIIllIl.SpeedHack and _IlIIIIllIl.Speed or 0x10 _IllllIIlll:SetStateEnabled(Enum.HumanoidStateType.Climbing, true) end
+ end
+ if _IIlIlllIII.Character then _lIIllIlIII(_IIlIlllIII.Character) end
+ _IIlIlllIII.CharacterAdded:Connect(_lIIllIlIII) local function _lIlIlllIIl(_lIlIlIllll, _IlIIIlllll) local _IlIIllIIII = _lIlIlIllll.Rotation % 0x168 local _lIlIllIllI = _IlIIIlllll.Rotation % 0x168 local _lIIlIlIlII = (_lIlIllIllI + 0x68) % 0x168 local _lllIIlIIII = (_lIlIllIllI + 0x72) % 0x168 return _lIIlIlIlII > _lllIIlIIII and (_IlIIllIIII >= _lIIlIlIlII or _IlIIllIIII <= _lllIIlIIII) or (_IlIIllIIII >= _lIIlIlIlII and _IlIIllIIII <= _lllIIlIIII) end
+ task.spawn( function () while true do task.wait(0.01) if _IlIIIIllIl.AutoSkill and _IIlIlllIII.Team and _IIlIlllIII.Team.Name == "\083\117\114\118\105\118\111\114\115" then local _llIlIIllII = _IIlIlllIII:FindFirstChild("\080\108\097\121\101\114\071\117\105") local _IllIIIlIIl = _llIlIIllII and _llIlIIllII:FindFirstChild("\083\107\105\108\108\067\104\101\099\107\080\114\111\109\112\116\071\117\105") local _llIIlIlIIl = _IllIIIlIIl and _IllIIIlIIl:FindFirstChild("\067\104\101\099\107") if _llIIlIlIIl and _llIIlIlIIl.Visible then local _lIlIlIllll = _llIIlIlIIl:FindFirstChild("\076\105\110\101") local _IlIIIlllll = _llIIlIlIIl:FindFirstChild("\071\111\097\108") if _lIlIlIllll and _IlIIIlllll and _lIlIlllIIl(_lIlIlIllll, _IlIIIlllll) then _llIIIIIIIl:SendKeyEvent(true, Enum.KeyCode.Space, false, game) task.wait(0.02) _llIIIIIIIl:SendKeyEvent(false, Enum.KeyCode.Space, false, game) task.wait(0.3) end
+ end
+ end
+ end
+ end
+ ) _llIllIlIlI:Tab("\086\105\115\117\097\108\115", 0x1) _llIllIlIlI:Tab("\080\108\097\121\101\114", 0x2) _llIllIlIlI:Category("\086\105\115\117\097\108\115", "\069\083\080\032\079\112\116\105\111\110\115") _llIllIlIlI:Toggle("\086\105\115\117\097\108\115", "\069\083\080\032\080\108\097\121\101\114", function (_llIIlIlllI) _IlIIIIllIl.PlayerESP = _llIIlIlllI _llIlllIlll(_llIIlIlllI) end
+ ) _llIllIlIlI:Toggle("\086\105\115\117\097\108\115", "\069\083\080\032\071\101\110\101\114\097\116\111\114", function (_llIIlIlllI) _IlIIIIllIl.GeneratorESP = _llIIlIlllI _IllllIIlII(_llIIlIlllI) end
+ ) _llIllIlIlI:Category("\086\105\115\117\097\108\115", "\069\110\118\105\114\111\110\109\101\110\116") _llIllIlIlI:Toggle("\086\105\115\117\097\108\115", "\070\117\108\108\098\114\105\103\104\116", function (_llIIlIlllI) _IlIIIIllIl.Fullbright = _llIIlIlllI _lIlIIlllIl(_llIIlIlllI) end
+ ) _llIllIlIlI:Toggle("\086\105\115\117\097\108\115", "\078\111\032\070\111\103", function (_llIIlIlllI) _IlIIIIllIl.NoFog = _llIIlIlllI _llllIllllI(_llIIlIlllI) end
+ ) _llIllIlIlI:Toggle("\086\105\115\117\097\108\115", "\078\111\032\083\104\097\100\111\119\115", function (_llIIlIlllI) _IlIIIIllIl.NoShadows = _llIIlIlllI _IllllIllIl(_llIIlIlllI) end
+ ) _llIllIlIlI:Toggle("\086\105\115\117\097\108\115", "\078\111\032\069\102\102\101\099\116", function (_llIIlIlllI) _IlIIIIllIl.NoEffect = _llIIlIlllI _IIIIllllIl(_llIIlIlllI) end
+ ) _llIllIlIlI:Toggle("\086\105\115\117\097\108\115", "\067\114\111\115\115\104\097\105\114", function (_llIIlIlllI) _IlIIIIllIl.Crosshair = _llIIlIlllI _llIlllIIII(_llIIlIlllI) end
+ ) _llIllIlIlI:Category("\080\108\097\121\101\114", "\076\101\103\105\116\032\038\032\082\097\103\101") _llIllIlIlI:Toggle("\080\108\097\121\101\114", "\065\117\116\111\032\080\101\114\102\101\099\116\032\083\107\105\108\108\067\104\101\099\107", function (_llIIlIlllI) _IlIIIIllIl.AutoSkill = _llIIlIlllI end
+ ) _llIllIlIlI:Toggle("\080\108\097\121\101\114", "\077\111\111\110\119\097\108\107\032\040\066\105\110\100\032\069\041", function (_llIIlIlllI) _IlIIIIllIl.Moonwalk = _llIIlIlllI if not _llIIlIlllI then _lIllIIIIIl = false end
+ end
+ ) _llIllIlIlI:Toggle("\080\108\097\121\101\114", "\078\111\099\108\105\112\032\040\066\105\110\100\032\086\041", function (_llIIlIlllI) _IlIIIIllIl.Noclip = _llIIlIlllI if not _llIIlIlllI then _IIIlIlIIII = false _IIIllIlIlI(false) end
+ end
+ ) local _IlIIlIIIII = nil _llIllIlIlI:Toggle("\080\108\097\121\101\114", "\083\112\101\101\100\032\072\097\099\107", function (_llIIlIlllI) _IlIIIIllIl.SpeedHack = _llIIlIlllI local _lllIIIllll = _IllIIlllIl["\080\108\097\121\101\114"].Page if _llIIlIlllI then _IlIIlIIIII = _llIllIlIlI:CreateDynamicSlider(_lllIIIllll, "\083\112\101\101\100\032\086\097\108\117\101", 0x10, 0x2D, _IlIIIIllIl.Speed, function (v) _IlIIIIllIl.Speed = v if _IllllIIlll and _IllllIIlll.Parent then _IllllIIlll.WalkSpeed = v end
+ end
+ ) else if _IlIIlIIIII then _IlIIlIIIII:Destroy() _IlIIlIIIII = nil end
+ if _IllllIIlll and _IllllIIlll.Parent then _IllllIIlll.WalkSpeed = 0x10 end
+ end
+ end
+ ) _llllIIlIlI("\086\105\115\117\097\108\115") local _lIIIIllllI = true local function _IlIIIlllll(_llIIlIlllI) _IllllIlIII.MouseIconEnabled = _llIIlIlllI _IllllIlIII.MouseBehavior = _llIIlIlllI and Enum.MouseBehavior.Default or Enum.MouseBehavior.LockCenter end
+ _IllllIlIII.InputBegan:Connect( function (input, gp) if gp or _IllllIlIII:GetFocusedTextBox() then return end
+ if input.KeyCode == Enum.KeyCode.RightShift then _lIIIIllllI = not _lIIIIllllI _lIIIllIlII.Visible = _lIIIIllllI _IlIIIlllll(_lIIIIllllI) elseif input.KeyCode == Enum.KeyCode.G then _IlIIIlllll(_IllllIlIII.MouseBehavior ~= Enum.MouseBehavior.Default) elseif input.KeyCode == Enum.KeyCode.V and _IlIIIIllIl.Noclip then _IIIlIlIIII = not _IIIlIlIIII _IIIllIlIlI(_IIIlIlIIII) elseif input.KeyCode == Enum.KeyCode.E and _IlIIIIllIl.Moonwalk then _lIllIIIIIl = not _lIllIIIIIl elseif input.KeyCode == Enum.KeyCode.LeftShift or input.KeyCode == Enum.KeyCode.RightShift then _IlIIlIIIlI = true end
+ end
+ ) _IllllIlIII.InputEnded:Connect( function (input) if input.KeyCode == Enum.KeyCode.LeftShift or input.KeyCode == Enum.KeyCode.RightShift then _IlIIlIIIlI = false end
+ end
+ ) local _lIIIllIlIl = 0x0 RunService.RenderStepped:Connect( function () _lIIIllIlIl = (_lIIIllIlIl + 0x1) % 0xF if _IlIIIIllIl.PlayerESP and _lIIIllIlIl == 0x0 then for plr, data in pairs(_llIIIIIlIl) do if plr.Parent and plr.Character and data.hl then local _lllllIllII = _IIIlIIIIII(plr) data.hl.FillColor, data.hl.OutlineColor = _lllllIllII, _lllllIllII if data.label then data.label.Text, data.label.TextColor3 = plr.Name, _lllllIllII end
+ end
+ end
+ end
+ if _IlIIIIllIl.GeneratorESP and _lIIIllIlIl == 0x5 then for _IIlllIlIll, data in pairs(_IIlIIIlIIl) do if _IIlllIlIll and _IIlllIlIll.Parent and data.label then local _IIIIlIllIl = _IIlllIlIll:GetAttribute("\082\101\112\097\105\114\080\114\111\103\114\101\115\115") or _IIlllIlIll:GetAttribute("\080\114\111\103\114\101\115\115") or 0x0 data.label.Text = string.format("\037\046\048\102\037\037", _IIIIlIllIl) data.hl.FillColor, data.hl.OutlineColor = _IIlllIlIIl.Generator, _IIlllIlIIl.Generator end
+ end
+ end
+ if _IlIIIIllIl.Moonwalk and _lIllIIIIIl and _IllllIIlll and _IIllIllIlI and _IIllIllIlI.Parent then local _IIIllIIIll = -_IIllIllIlI.CFrame.LookVector + (_IIllIllIlI.CFrame.RightVector * math.sin(tick() * _lIIllllIIl) * _IIlllIIIII) _IllllIIlll:Move(_IIIllIIIll, false) end
+ end
+ ) RunService.Stepped:Connect( function () if _IlIIIIllIl.Noclip and _IIIlIlIIII then for i = 0x1, #_lIIIIlIllI do local _IllIllllIl = _lIIIIlIllI[i] if _IllIllllIl then _IllIllllIl.CanCollide = false end
+ end
+ end
+ end
+ ) RunService.Heartbeat:Connect( function () if not _IlIIlIIIlI or not _IlIIIIllIl.SpeedHack then return end
+ if _IllllIIlll and _IllllIIlll.Parent and _IllllIIlll.WalkSpeed ~= _IlIIIIllIl.Speed then _IllllIIlll.WalkSpeed = _IlIIIIllIl.Speed end
+ end
+ ) Players.PlayerRemoving:Connect( function (plr) _llIIIIIlIl[plr] = nil end
+ ) for _, _IllIllllIl in ipairs(Players:GetPlayers()) do _IIIIlllllI(_IllIllllIl) end
+ Players.PlayerAdded:Connect(_IIIIlllllI) _lIIlIIIllI() _IlIIIlllll(true) end
+ )(...)
