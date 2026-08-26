@@ -550,10 +550,7 @@ local function toggleCrosshair(s)
 end
 
 ------------------------------------------------
--- AUTO PARRY ENGINE — ULTRA FAST HYBRID
--- AnimationPlayed = primary instant trigger
--- RenderStepped  = fallback for already detected attacks
--- No full animator polling every frame
+-- AUTO PARRY V2 — POINT BLANK / ZERO DELAY
 ------------------------------------------------
 
 local ATTACK_IDS = {
@@ -585,19 +582,26 @@ local ATTACK_IDS = {
 }
 
 ------------------------------------------------
--- PARry SETTINGS
+-- SETTINGS
 ------------------------------------------------
 
 local DEFAULT_PARRY_DISTANCE   = 10
 local KNIGHT_ABILITY_DISTANCE  = 20
 
+-- Main new setting:
+-- inside this distance, FOV/facing is ignored
+-- and parry happens immediately when attack animation
+-- is detected.
+local POINT_BLANK_DISTANCE     = 4
+
 local DEFAULT_FACING_THRESHOLD = 0.60
 local KNIGHT_ABILITY_THRESHOLD = 0.30
 
-local KNIGHT_ABILITY_ID = "rbxassetid://80411309607666"
+local KNIGHT_ABILITY_ID =
+    "rbxassetid://80411309607666"
 
 ------------------------------------------------
--- CACHE
+-- STATE
 ------------------------------------------------
 
 local parryConnections = {}
@@ -606,15 +610,15 @@ local activeAttacks    = {}
 local triggeredTracks  = {}
 
 ------------------------------------------------
--- OPTIONAL SERVER PARRY REMOTE
+-- PARRY REMOTE
 ------------------------------------------------
 
 local parryEvent = nil
 
 pcall(function()
     local remotes = ReplicatedStorage:FindFirstChild("Remotes")
-    local items = remotes and remotes:FindFirstChild("Items")
-    local dagger = items and items:FindFirstChild("Parry Dagger")
+    local items   = remotes and remotes:FindFirstChild("Items")
+    local dagger  = items and items:FindFirstChild("Parry Dagger")
 
     if dagger then
         parryEvent = dagger:FindFirstChild("parry")
@@ -622,14 +626,17 @@ pcall(function()
 end)
 
 ------------------------------------------------
--- ULTRA FAST EXECUTION
+-- INSTANT PARRY
 ------------------------------------------------
 
 local function instantParry(isKnightAbility)
+
+    ------------------------------------------------
+    -- Knight ability
+    ------------------------------------------------
+
     if isKnightAbility then
 
-        -- Knight ability uses the dedicated key.
-        -- No wait before pressing.
         VIM:SendKeyEvent(
             true,
             Enum.KeyCode.LeftControl,
@@ -648,7 +655,7 @@ local function instantParry(isKnightAbility)
     end
 
     ------------------------------------------------
-    -- SERVER PATH FIRST
+    -- Remote first
     ------------------------------------------------
 
     if parryEvent then
@@ -658,7 +665,7 @@ local function instantParry(isKnightAbility)
     end
 
     ------------------------------------------------
-    -- INPUT FALLBACK
+    -- Mouse fallback
     ------------------------------------------------
 
     VIM:SendMouseButtonEvent(
@@ -685,6 +692,7 @@ end
 ------------------------------------------------
 
 local function getAnimationId(track)
+
     if not track then
         return nil
     end
@@ -695,48 +703,28 @@ local function getAnimationId(track)
         return nil
     end
 
-    return tostring(animation.AnimationId):lower()
+    return tostring(
+        animation.AnimationId
+    ):lower()
 end
 
 ------------------------------------------------
--- DISTANCE
+-- REMOVE ATTACK
 ------------------------------------------------
 
-local function getDistanceSquared(enemyRoot, myRoot)
-    local diff = myRoot.Position - enemyRoot.Position
-    return diff:Dot(diff), diff
-end
+local function removeAttack(track)
 
-------------------------------------------------
--- FACING TEST
-------------------------------------------------
-
-local function getFacingThreshold(isKnightAbility)
-    if isKnightAbility then
-        return KNIGHT_ABILITY_THRESHOLD
+    if track then
+        activeAttacks[track] = nil
     end
-
-    ------------------------------------------------
-    -- Keep TerrorAngle shared with Terror Radius.
-    -- TerrorAngle is the total cone angle.
-    ------------------------------------------------
-
-    local angle = math_clamp(
-        Flags.TerrorAngle or 90,
-        0,
-        360
-    )
-
-    return math_cos(
-        math_rad(angle * 0.5)
-    )
 end
 
 ------------------------------------------------
--- FAST TARGET VALIDATION
+-- VALIDATE ATTACK
 ------------------------------------------------
 
 local function validateAttack(attack)
+
     if attack.triggered then
         return false
     end
@@ -751,52 +739,70 @@ local function validateAttack(attack)
         return false
     end
 
-    local character = player.Character
+    ------------------------------------------------
+    -- Enemy character
+    ------------------------------------------------
 
-    if not character then
+    local enemyCharacter =
+        player.Character
+
+    if not enemyCharacter then
         return false
     end
 
     ------------------------------------------------
-    -- Refresh enemy root if necessary
+    -- Enemy root
     ------------------------------------------------
 
-    local enemyRoot = attack.enemyRoot
+    local enemyRoot =
+        attack.enemyRoot
 
-    if not enemyRoot or not enemyRoot.Parent then
-        enemyRoot = character:FindFirstChild("HumanoidRootPart")
+    if not enemyRoot or
+       not enemyRoot.Parent then
+
+        enemyRoot =
+            enemyCharacter:FindFirstChild(
+                "HumanoidRootPart"
+            )
 
         if not enemyRoot then
             return false
         end
 
-        attack.enemyRoot = enemyRoot
-        enemyRootCache[player] = enemyRoot
+        attack.enemyRoot =
+            enemyRoot
+
+        enemyRootCache[player] =
+            enemyRoot
     end
 
     ------------------------------------------------
-    -- Refresh local root every check.
-    -- Important after respawn.
+    -- Local character/root
     ------------------------------------------------
 
-    local myCharacter = LocalPlayer.Character
+    local myCharacter =
+        LocalPlayer.Character
 
     if not myCharacter then
         return false
     end
 
-    local myRoot = myCharacter:FindFirstChild("HumanoidRootPart")
+    local myRoot =
+        myCharacter:FindFirstChild(
+            "HumanoidRootPart"
+        )
 
     if not myRoot then
         return false
     end
 
     ------------------------------------------------
-    -- ATTACK TYPE
+    -- Attack type
     ------------------------------------------------
 
     local isKnightAbility =
-        attack.animId == KNIGHT_ABILITY_ID
+        attack.animId ==
+        KNIGHT_ABILITY_ID
 
     local maxDistance =
         isKnightAbility
@@ -804,37 +810,81 @@ local function validateAttack(attack)
         or DEFAULT_PARRY_DISTANCE
 
     ------------------------------------------------
-    -- DISTANCE — squared, no Magnitude
+    -- DISTANCE
+    --
+    -- Squared distance avoids Magnitude.
     ------------------------------------------------
 
-    local distanceSquared, diff =
-        getDistanceSquared(enemyRoot, myRoot)
+    local diff =
+        myRoot.Position -
+        enemyRoot.Position
 
-    if distanceSquared >
-        maxDistance * maxDistance then
-
-        return false
-    end
+    local distanceSquared =
+        diff:Dot(diff)
 
     if distanceSquared < 0.000001 then
         return false
     end
 
+    local distance =
+        math_sqrt(distanceSquared)
+
     ------------------------------------------------
-    -- FACING
+    -- POINT-BLANK FAST PATH
+    --
+    -- This is the most important change.
+    --
+    -- At very close range we DON'T wait for
+    -- facing/FOV. The attack animation itself
+    -- is enough to trigger the parry.
     ------------------------------------------------
 
-    local inverseDistance =
-        1 / math_sqrt(distanceSquared)
+    if not isKnightAbility and
+       distance <= POINT_BLANK_DISTANCE then
+
+        attack.pointBlank = true
+
+        return true, false
+    end
+
+    ------------------------------------------------
+    -- NORMAL DISTANCE LIMIT
+    ------------------------------------------------
+
+    if distance > maxDistance then
+        return false
+    end
+
+    ------------------------------------------------
+    -- NORMAL FACING CHECK
+    ------------------------------------------------
 
     local direction =
-        diff * inverseDistance
+        diff * (1 / distance)
 
     local dot =
-        enemyRoot.CFrame.LookVector:Dot(direction)
+        enemyRoot.CFrame.LookVector:Dot(
+            direction
+        )
 
-    local threshold =
-        getFacingThreshold(isKnightAbility)
+    local threshold
+
+    if isKnightAbility then
+        threshold =
+            KNIGHT_ABILITY_THRESHOLD
+    else
+        local angle =
+            math_clamp(
+                Flags.TerrorAngle or 90,
+                0,
+                360
+            )
+
+        threshold =
+            math_cos(
+                math_rad(angle * 0.5)
+            )
+    end
 
     if dot < threshold then
         return false
@@ -844,47 +894,49 @@ local function validateAttack(attack)
 end
 
 ------------------------------------------------
--- REMOVE ATTACK
+-- FIRE PARRY
 ------------------------------------------------
 
-local function removeAttack(track)
-    if track then
-        activeAttacks[track] = nil
-    end
-end
+local function fireParry(attack, isKnightAbility)
 
-------------------------------------------------
--- FIRE ATTACK
-------------------------------------------------
-
-local function fireAttack(attack)
     if attack.triggered then
         return
     end
 
     attack.triggered = true
+    attack.isKnightAbility =
+        isKnightAbility
 
-    local track = attack.track
+    local track =
+        attack.track
 
     if track then
         triggeredTracks[track] = true
         activeAttacks[track] = nil
     end
 
-    instantParry(attack.isKnightAbility)
+    ------------------------------------------------
+    -- NO WAIT HERE
+    ------------------------------------------------
+
+    instantParry(isKnightAbility)
 
     ------------------------------------------------
-    -- Cleanup later without blocking the parry.
+    -- Cleanup only
     ------------------------------------------------
 
     if track then
+
         task.spawn(function()
+
             if track.IsPlaying then
                 track.Stopped:Wait()
             end
 
             triggeredTracks[track] = nil
+
         end)
+
     end
 end
 
@@ -893,24 +945,25 @@ end
 ------------------------------------------------
 
 local function checkAttack(attack)
+
     if attack.triggered then
         return true
     end
 
-    local track = attack.track
+    local track =
+        attack.track
 
     if not track then
-        removeAttack(track)
         return false
     end
 
     ------------------------------------------------
-    -- If animation has completely stopped,
-    -- there is no reason to keep checking it.
+    -- Animation ended
     ------------------------------------------------
 
     if not track.IsPlaying then
         removeAttack(track)
+        triggeredTracks[track] = nil
         return false
     end
 
@@ -918,15 +971,12 @@ local function checkAttack(attack)
        track.TimePosition >= track.Length then
 
         removeAttack(track)
+        triggeredTracks[track] = nil
         return false
     end
 
     ------------------------------------------------
-    -- IMPORTANT:
-    -- We intentionally keep checking an attack
-    -- when it was detected outside the FOV.
-    -- This fixes the old "missed because killer
-    -- turned 1 frame later" problem.
+    -- Validate
     ------------------------------------------------
 
     local ok, isKnight =
@@ -936,24 +986,32 @@ local function checkAttack(attack)
         return false
     end
 
-    attack.isKnightAbility = isKnight
+    ------------------------------------------------
+    -- FIRE IMMEDIATELY
+    ------------------------------------------------
 
-    fireAttack(attack)
+    fireParry(
+        attack,
+        isKnight
+    )
 
     return true
 end
 
 ------------------------------------------------
 -- REGISTER ATTACK
--- PRIMARY ZERO-DELAY PATH
+--
+-- AnimationPlayed is the primary path.
 ------------------------------------------------
 
 local function registerAttack(track, player)
+
     if not Flags.AutoParry then
         return
     end
 
-    if not track or not track.Animation then
+    if not track or
+       not track.Animation then
         return
     end
 
@@ -966,7 +1024,7 @@ local function registerAttack(track, player)
     end
 
     ------------------------------------------------
-    -- Killer validation
+    -- Killer only
     ------------------------------------------------
 
     if not player.Team or
@@ -976,7 +1034,7 @@ local function registerAttack(track, player)
     end
 
     ------------------------------------------------
-    -- Animation ID
+    -- Animation
     ------------------------------------------------
 
     local animId =
@@ -989,7 +1047,7 @@ local function registerAttack(track, player)
     end
 
     ------------------------------------------------
-    -- Enemy root cache
+    -- Enemy root
     ------------------------------------------------
 
     local enemyRoot =
@@ -1019,7 +1077,7 @@ local function registerAttack(track, player)
     end
 
     ------------------------------------------------
-    -- Create attack state
+    -- Attack state
     ------------------------------------------------
 
     local attack = {
@@ -1028,19 +1086,17 @@ local function registerAttack(track, player)
         enemyRoot = enemyRoot,
         animId = animId,
         triggered = false,
-        isKnightAbility = (
-            animId == KNIGHT_ABILITY_ID
-        ),
+        pointBlank = false,
+        isKnightAbility =
+            animId == KNIGHT_ABILITY_ID,
     }
 
-    activeAttacks[track] = attack
+    activeAttacks[track] =
+        attack
 
     ------------------------------------------------
     -- CRITICAL:
     -- Immediate synchronous check.
-    -- No task.spawn.
-    -- No task.defer.
-    -- No Heartbeat wait.
     ------------------------------------------------
 
     if checkAttack(attack) then
@@ -1048,38 +1104,49 @@ local function registerAttack(track, player)
     end
 
     ------------------------------------------------
-    -- Cleanup listener
+    -- Keep checking this exact attack.
     ------------------------------------------------
 
-    track.Stopped:Connect(function()
-        removeAttack(track)
-        triggeredTracks[track] = nil
-    end)
+    track.Stopped:Connect(
+        function()
+
+            activeAttacks[track] = nil
+            triggeredTracks[track] = nil
+
+        end
+    )
 end
 
 ------------------------------------------------
--- CHARACTER WATCHER
+-- CHARACTER WATCH
 ------------------------------------------------
 
-local function watchCharacter(player, character)
+local function watchCharacter(
+    player,
+    character
+)
 
     ------------------------------------------------
-    -- Disconnect old watcher
+    -- Disconnect previous
     ------------------------------------------------
 
     if parryConnections[player] then
 
         for _, connection in
-            ipairs(parryConnections[player]) do
+            ipairs(
+                parryConnections[player]
+            ) do
 
             connection:Disconnect()
+
         end
 
-        parryConnections[player] = nil
+        parryConnections[player] =
+            nil
     end
 
     ------------------------------------------------
-    -- Animator
+    -- Humanoid
     ------------------------------------------------
 
     local humanoid =
@@ -1092,6 +1159,10 @@ local function watchCharacter(player, character)
         return
     end
 
+    ------------------------------------------------
+    -- Animator
+    ------------------------------------------------
+
     local animator =
         humanoid:WaitForChild(
             "Animator",
@@ -1103,21 +1174,21 @@ local function watchCharacter(player, character)
     end
 
     ------------------------------------------------
-    -- Root cache
+    -- Root
     ------------------------------------------------
 
-    local enemyRoot =
+    local root =
         character:WaitForChild(
             "HumanoidRootPart",
             5
         )
 
-    if not enemyRoot then
+    if not root then
         return
     end
 
     enemyRootCache[player] =
-        enemyRoot
+        root
 
     ------------------------------------------------
     -- Connections
@@ -1129,9 +1200,8 @@ local function watchCharacter(player, character)
         connections
 
     ------------------------------------------------
-    -- PRIMARY EVENT
-    --
-    -- This is the fastest path.
+    -- PRIMARY:
+    -- AnimationPlayed
     ------------------------------------------------
 
     connections[#connections + 1] =
@@ -1139,17 +1209,19 @@ local function watchCharacter(player, character)
             function(track)
 
                 if Flags.AutoParry then
+
                     registerAttack(
                         track,
                         player
                     )
+
                 end
 
             end
         )
 
     ------------------------------------------------
-    -- Catch already playing attacks.
+    -- Catch already playing attacks
     ------------------------------------------------
 
     if Flags.AutoParry then
@@ -1163,13 +1235,14 @@ local function watchCharacter(player, character)
                 track,
                 player
             )
+
         end
 
     end
 end
 
 ------------------------------------------------
--- PLAYER WATCHER
+-- PLAYER WATCH
 ------------------------------------------------
 
 local function watchPlayer(player)
@@ -1179,10 +1252,12 @@ local function watchPlayer(player)
     end
 
     if player.Character then
+
         watchCharacter(
             player,
             player.Character
         )
+
     end
 
     player.CharacterAdded:Connect(
@@ -1202,9 +1277,12 @@ end
 ------------------------------------------------
 
 for _, player in
-    ipairs(Players:GetPlayers()) do
+    ipairs(
+        Players:GetPlayers()
+    ) do
 
     watchPlayer(player)
+
 end
 
 ------------------------------------------------
@@ -1222,22 +1300,24 @@ Players.PlayerAdded:Connect(
 Players.PlayerRemoving:Connect(
     function(player)
 
-        enemyRootCache[player] = nil
+        enemyRootCache[player] =
+            nil
 
         if parryConnections[player] then
 
             for _, connection in
-                ipairs(parryConnections[player]) do
+                ipairs(
+                    parryConnections[player]
+                ) do
 
                 connection:Disconnect()
+
             end
 
-            parryConnections[player] = nil
-        end
+            parryConnections[player] =
+                nil
 
-        ------------------------------------------------
-        -- Remove their active attacks
-        ------------------------------------------------
+        end
 
         for track, attack in
             pairs(activeAttacks) do
@@ -1252,13 +1332,10 @@ Players.PlayerRemoving:Connect(
 )
 
 ------------------------------------------------
--- RENDERSTEPPED FALLBACK
+-- FAST FALLBACK
 --
--- Unlike the old Heartbeat implementation,
--- this does NOT scan every Animator.
---
--- It only checks attacks that were already
--- detected by AnimationPlayed.
+-- Only checks already detected attacks.
+-- Does NOT scan all animations.
 ------------------------------------------------
 
 RunService.RenderStepped:Connect(
@@ -1277,6 +1354,9 @@ RunService.RenderStepped:Connect(
 
     end
 )
+------------------------------------------------
+-- END AUTO PARRY V2
+------------------------------------------------
 ------------------------------------------------
 -- TERROR RADIUS — FOV cone lines on floor
 -- Two lines per killer: left and right edge of their view cone
