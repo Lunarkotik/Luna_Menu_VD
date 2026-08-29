@@ -571,3 +571,124 @@ player.CharacterAdded:Connect(function()
         removeAllEffects()
     end)
 end)
+
+local Players    = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+
+------------------------------------------------
+-- CONFIG
+------------------------------------------------
+local BOOST_MULTIPLIER  = 1.10   -- script speed floor  (1.15 = +15%)
+local PENALTY_THRESHOLD = 0.90   -- if game sets value <= this, respect it
+------------------------------------------------
+
+local gameSpeedValue = 1
+local speedOurSet    = false
+local speedConn      = nil
+
+local function connectTracker(char)
+    if speedConn then speedConn:Disconnect() speedConn = nil end
+    gameSpeedValue = char:GetAttribute("speedboost") or 1
+    speedOurSet    = false
+
+    speedConn = char:GetAttributeChangedSignal("speedboost"):Connect(function()
+        if speedOurSet then speedOurSet = false return end
+        gameSpeedValue = char:GetAttribute("speedboost") or 1
+    end)
+end
+
+local function setupCharacter(char)
+    char:WaitForChild("HumanoidRootPart", 5)
+    connectTracker(char)
+end
+
+if LocalPlayer.Character then setupCharacter(LocalPlayer.Character) end
+LocalPlayer.CharacterAdded:Connect(function(char)
+    task.wait(0.3)
+    setupCharacter(char)
+end)
+
+RunService.Heartbeat:Connect(function()
+    local char = LocalPlayer.Character
+    if not char then return end
+
+    local target
+
+    if gameSpeedValue <= PENALTY_THRESHOLD then
+        target = gameSpeedValue                  -- hook / slowdown: don't fight the game
+    elseif gameSpeedValue > BOOST_MULTIPLIER then
+        target = gameSpeedValue                  -- server buff is already higher: keep it
+    else
+        target = BOOST_MULTIPLIER                -- apply script floor
+    end
+
+    local current = char:GetAttribute("speedboost") or 1
+    if math.abs(current - target) > 0.001 then
+        speedOurSet = true
+        char:SetAttribute("speedboost", target)
+    end
+end)
+
+local Players    = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UIS        = game:GetService("UserInputService")
+
+local LocalPlayer = Players.LocalPlayer
+
+------------------------------------------------
+-- CONFIG
+------------------------------------------------
+local MOONWALK_KEY = Enum.KeyCode.E   -- toggle key
+------------------------------------------------
+
+local backRun  = false
+local humanoid = nil
+local root     = nil
+
+local function setupCharacter(char)
+    humanoid = char:WaitForChild("Humanoid", 5)
+    root     = char:WaitForChild("HumanoidRootPart", 5)
+end
+
+if LocalPlayer.Character then setupCharacter(LocalPlayer.Character) end
+LocalPlayer.CharacterAdded:Connect(function(char)
+    task.wait(0.3)
+    backRun = false
+    setupCharacter(char)
+end)
+
+UIS.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == MOONWALK_KEY then
+        backRun = not backRun
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if not backRun then return end
+    if not humanoid or not humanoid.Parent then
+        local char = LocalPlayer.Character
+        if char then
+            humanoid = char:FindFirstChildOfClass("Humanoid")
+            root     = char:FindFirstChild("HumanoidRootPart")
+        end
+        return
+    end
+    if not root or not root.Parent then return end
+    humanoid:Move(-root.CFrame.LookVector, false)
+end)
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Camera = workspace.CurrentCamera
+
+local TARGET_FOV = 100 -- Укажи нужное значение FOV здесь
+
+RunService.RenderStepped:Connect(function()
+    -- Принудительно удерживаем FOV, если игра или другой скрипт пытаются его изменить
+    if Camera.FieldOfView ~= TARGET_FOV then
+        Camera.FieldOfView = TARGET_FOV
+    end
+end)
