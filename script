@@ -1,2073 +1,106 @@
--- [[ LUNA MENU INTEGRATED CHEAT SUITE (ULTRA OPTIMIZED + ADVANCED AUTO PARRY) ]]
 local Players = game:GetService("Players")
-local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
-local Workspace = game:GetService("Workspace")
-local Lighting = game:GetService("Lighting")
-local VirtualInputManager = game:GetService("VirtualInputManager")
-local CoreGui = game:GetService("CoreGui")
-local TweenService = game:GetService("TweenService")
-local HttpService = game:GetService("HttpService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local localPlayer = Players.LocalPlayer
 
-local LocalPlayer = Players.LocalPlayer
-local Camera = Workspace.CurrentCamera
+-- Настройки
+local RADIUS = 10 -- радиус в студах
 
--- Localized fast functions & math
-local tick = tick
-local math_clamp = math.clamp
-local math_round = math.round
-local math_abs = math.abs
-local math_random = math.random
-local math_atan = math.atan
-local math_sqrt = math.sqrt
-local math_rad = math.rad
-local math_tan = math.tan
-local math_cos = math.cos
-local Vector3_new = Vector3.new
-local CFrame_new = CFrame.new
-local table_insert = table.insert
-local table_clear = table.clear
-local pairs = pairs
-local ipairs = ipairs
-
-------------------------------------------------
--- STATE VARIABLES (GUI BINDINGS) & CONFIG
-------------------------------------------------
-local Config = {
-    MenuKey = Enum.KeyCode.RightShift,
-    MouseUnlockKey = Enum.KeyCode.G,
-    MoonwalkKey = Enum.KeyCode.E
+-- Список целевых анимаций выпада и атаки
+local targetAnimId = {
+    ["rbxassetid://129784271201071"] = true, -- Джефф (выпад)
+    ["rbxassetid://117042998468241"] = true, -- Маска (выпад)
+    ["rbxassetid://105374834496520"] = true, -- Джекет (выпад)
+    ["rbxassetid://115244153053858"] = true, -- Джекет (Кобра)(выпад)
+    ["rbxassetid://117070354890871"] = true, -- Джекет (Эш)(выпад)
+    ["rbxassetid://122812055447896"] = true, -- Вейл (выпад)
+    ["rbxassetid://135002183282873"] = true, -- Доктор (выпад)
+    ["rbxassetid://118907603246885"] = true, -- Рыцарь (выпад)
+    ["rbxassetid://113255068724446"] = true, -- Хайден (выпад)
+    ["rbxassetid://110355011987939"] = true, -- Джейсон (выпад)
+    ["rbxassetid://138720291317243"] = true, -- Джекет (Тони) (атака)
+    ["rbxassetid://132817836308238"] = true, -- Джефф (атака)
+    ["rbxassetid://133963973694098"] = true, -- Маска (атака)
+    ["rbxassetid://111920872708571"] = true, -- Джекет (атака)
+    ["rbxassetid://130593238885843"] = true, -- Джекет (Кобра) (атака)
+    ["rbxassetid://106871536134254"] = true, -- Джекет (Эш)(атака)
+    ["rbxassetid://78935059863801"] = true, -- Вейл (атака)
+    ["rbxassetid://121216847022485"] = true, -- Доктор (атака)
+    ["rbxassetid://78432063483146"] = true, -- Рыцарь (атака)
+    ["rbxassetid://74968262036854"] = true, -- Хайден (атака)
+    ["rbxassetid://139369275981139"] = true, -- Джейсон (атака)
 }
 
-local Flags = {
-    LunaSouls = false,
-    SurvivorESP = false,
-    KillerESP = false,
-    GeneratorESP = false,
-    Fullbright = false,
-    NoEffect = false,
-    Crosshair = false,
-    CrosshairType = "Cross",
-    NoFog = false,
-    NoShadows = false,
-    AutoSkill = false,
-    AutoParry = false,
-    ParryDistance = 10,
-    TerrorAngle = 90,
-    ParryRing = false,
-    Moonwalk = false,
-    SpeedBoostActive = false,
-    SpeedBoostValue = 0,
-    FOVValue = 70,
-    FOVActive = false,
-    Aimbot = false,
-    AimFOV = 2,
-    AimSmoothness = 5,
-}
-
-------------------------------------------------
--- CONFIG SYSTEM (SAVE / LOAD)
-------------------------------------------------
-local ConfigFileName = "LunaMenu_Config.json"
-local canSaveFiles = (writefile and readfile and isfile) ~= nil
-
-local function SaveConfig()
-    if not canSaveFiles then return end
-    pcall(function()
-        local saveData = {
-            Flags = Flags,
-            Config = {
-                MenuKey = Config.MenuKey.Name,
-                MouseUnlockKey = Config.MouseUnlockKey.Name,
-                MoonwalkKey = Config.MoonwalkKey.Name
-            }
-        }
-        writefile(ConfigFileName, HttpService:JSONEncode(saveData))
-    end)
-end
-
-local function LoadConfig()
-    if not canSaveFiles then return end
-    pcall(function()
-        if isfile(ConfigFileName) then
-            local decoded = HttpService:JSONDecode(readfile(ConfigFileName))
-            if typeof(decoded) == "table" then
-                local targetFlags = decoded.Flags or decoded 
-                for k, v in pairs(targetFlags) do
-                    if Flags[k] ~= nil then Flags[k] = v end
-                end
-                if decoded.Config then
-                    if decoded.Config.MenuKey and Enum.KeyCode[decoded.Config.MenuKey] then
-                        Config.MenuKey = Enum.KeyCode[decoded.Config.MenuKey]
-                    end
-                    if decoded.Config.MouseUnlockKey and Enum.KeyCode[decoded.Config.MouseUnlockKey] then
-                        Config.MouseUnlockKey = Enum.KeyCode[decoded.Config.MouseUnlockKey]
-                    end
-                    if decoded.Config.MoonwalkKey and Enum.KeyCode[decoded.Config.MoonwalkKey] then
-                        Config.MoonwalkKey = Enum.KeyCode[decoded.Config.MoonwalkKey]
-                    end
-                end
-            end
-        end
-    end)
-end
-
-LoadConfig()
-
-------------------------------------------------
--- SAFE GUI PARENT RESOLVER
-------------------------------------------------
-local GuiParent = nil
-pcall(function()
-    if gethui then
-        GuiParent = gethui()
-    elseif typeof(syn) == "table" and syn.protect_gui then
-        local folder = Instance.new("Folder")
-        syn.protect_gui(folder)
-        folder.Parent = CoreGui
-        GuiParent = folder
-    elseif cloneref then
-        GuiParent = cloneref(CoreGui)
-    else
-        GuiParent = CoreGui
-    end
-end)
-
-if not GuiParent then
-    GuiParent = LocalPlayer:WaitForChild("PlayerGui", 10)
-end
-
-------------------------------------------------
--- BLOOM & THEME
-------------------------------------------------
-if not Lighting:FindFirstChildOfClass("BloomEffect") then
-    local bloom = Instance.new("BloomEffect")
-    bloom.Intensity = 0.5
-    bloom.Size = 24
-    bloom.Threshold = 0.8
-    bloom.Parent = Lighting
-end
-
-local Luna = {}
-Luna.Theme = {
-    Background = Color3.fromRGB(15, 17, 26),
-    Panel = Color3.fromRGB(22, 25, 38),
-    Button = Color3.fromRGB(30, 34, 51),
-    ButtonHover = Color3.fromRGB(42, 47, 71),
-    Accent = Color3.fromRGB(138, 75, 255),
-    AccentHover = Color3.fromRGB(158, 100, 255),
-    Text = Color3.fromRGB(240, 240, 255),
-    TextDark = Color3.fromRGB(140, 140, 160),
-    ToggleOff = Color3.fromRGB(40, 45, 66),
-    ToggleOn = Color3.fromRGB(138, 75, 255)
-}
-
-local OriginalLighting = {
-    Brightness = Lighting.Brightness,
-    ClockTime = Lighting.ClockTime,
-    GlobalShadows = Lighting.GlobalShadows,
-    Ambient = Lighting.Ambient,
-    OutdoorAmbient = Lighting.OutdoorAmbient,
-    FogStart = Lighting.FogStart,
-    FogEnd = Lighting.FogEnd
-}
-
-local COLORS = {
-    Killer = Color3.fromRGB(255, 70, 70),
-    Survivor = Color3.fromRGB(70, 255, 120),
-    GeneratorIncomplete = Color3.fromRGB(255, 220, 0),
-    GeneratorComplete = Color3.fromRGB(0, 0, 0),
-    BrightGreen = Color3.fromRGB(0, 255, 0)
-}
-
-local playerCache = {}
-local aimbotDrawings = {}
-local generatorCache = {}
-local crosshairGui = nil
-local crosshairFrame = nil
-local crosshairParts = {}
-local ringPartsFolder = nil
-local sparklesFolder = nil
-
-local backRun = false
-local humanoid = nil
-local root = nil
-
-------------------------------------------------
--- GUI CREATION
-------------------------------------------------
-if GuiParent:FindFirstChild("LunaMenu") then
-    GuiParent:FindFirstChild("LunaMenu"):Destroy()
-end
-
-local Gui = Instance.new("ScreenGui")
-Gui.Name = "LunaMenu"
-Gui.ResetOnSpawn = false
-Gui.Parent = GuiParent
-
-local Main = Instance.new("Frame", Gui)
-Main.Size = UDim2.fromOffset(680, 520)
-Main.Position = UDim2.new(.5, -340, .5, -260)
-Main.BackgroundColor3 = Luna.Theme.Background
-Main.ClipsDescendants = true
-Main.BorderSizePixel = 0
-
-Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 16)
-
-local TopBar = Instance.new("Frame", Main)
-TopBar.Size = UDim2.new(1, 0, 0, 50)
-TopBar.BackgroundTransparency = 1
-
-local Title = Instance.new("TextLabel", TopBar)
-Title.Size = UDim2.new(0, 200, 1, 0)
-Title.Position = UDim2.new(0, 20, 0, 0)
-Title.BackgroundTransparency = 1
-Title.Text = "Luna Menu"
-Title.TextColor3 = Luna.Theme.Text
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 18
-Title.TextXAlignment = Enum.TextXAlignment.Left
-
-local TabBar = Instance.new("ScrollingFrame", Main)
-TabBar.Size = UDim2.new(0, 150, 1, -65)
-TabBar.Position = UDim2.new(0, 15, 0, 55)
-TabBar.BackgroundTransparency = 1
-TabBar.ScrollBarThickness = 2
-TabBar.ScrollBarImageColor3 = Luna.Theme.Accent
-
-local TabListLayout = Instance.new("UIListLayout", TabBar)
-TabListLayout.FillDirection = Enum.FillDirection.Vertical
-TabListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-TabListLayout.VerticalAlignment = Enum.VerticalAlignment.Top
-TabListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-TabListLayout.Padding = UDim.new(0, 8)
-
-TabListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    TabBar.CanvasSize = UDim2.new(0, 0, 0, TabListLayout.AbsoluteContentSize.Y + 10)
-end)
-
-local PagesContainer = Instance.new("Frame", Main)
-PagesContainer.Size = UDim2.new(1, -185, 1, -65)
-PagesContainer.Position = UDim2.fromOffset(175, 55)
-PagesContainer.BackgroundTransparency = 1
-
-local Pages = {}
-local ActiveTab = nil
-
-local function CreatePage(name)
-    local Content = Instance.new("ScrollingFrame", PagesContainer)
-    Content.Name = name .. "Page"
-    Content.Size = UDim2.new(1, 0, 1, 0)
-    Content.Position = UDim2.fromOffset(0, 0)
-    Content.BackgroundTransparency = 1
-    Content.ScrollBarThickness = 4
-    Content.ScrollBarImageColor3 = Luna.Theme.Accent
-    Content.Visible = false
-
-    local Layout = Instance.new("UIListLayout", Content)
-    Layout.Padding = UDim.new(0, 10)
-    Layout.SortOrder = Enum.SortOrder.LayoutOrder
-
-    Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        Content.CanvasSize = UDim2.new(0, 0, 0, Layout.AbsoluteContentSize.Y + 15)
-    end)
-
-    return Content
-end
-
-local function selectTab(name)
-    if ActiveTab == name then return end
-    for tabName, tabData in pairs(Pages) do
-        if tabName == name then
-            tabData.Page.Visible = true
-            TweenService:Create(tabData.Button, TweenInfo.new(0.2), {BackgroundColor3 = Luna.Theme.Accent, TextColor3 = Luna.Theme.Text}):Play()
-        else
-            tabData.Page.Visible = false
-            TweenService:Create(tabData.Button, TweenInfo.new(0.2), {BackgroundColor3 = Luna.Theme.Panel, TextColor3 = Luna.Theme.TextDark}):Play()
-        end
-    end
-    ActiveTab = name
-end
-
-function Luna:Tab(name, layoutOrder)
-    local Page = CreatePage(name)
-    local Button = Instance.new("TextButton", TabBar)
-    Button.Size = UDim2.new(1, -10, 0, 38)
-    Button.BackgroundColor3 = Luna.Theme.Panel
-    Button.Text = name
-    Button.TextColor3 = Luna.Theme.TextDark
-    Button.Font = Enum.Font.GothamBold
-    Button.TextSize = 13
-    Button.LayoutOrder = layoutOrder
-    Button.AutoButtonColor = false
-
-    Instance.new("UICorner", Button).CornerRadius = UDim.new(0, 8)
-
-    Button.MouseButton1Click:Connect(function()
-        selectTab(name)
-    end)
-
-    Pages[name] = { Page = Page, Button = Button }
-end
-
-function Luna:Category(tabName, name)
-    local parentPage = Pages[tabName] and Pages[tabName].Page
-    if not parentPage then return end
-
-    local Label = Instance.new("TextLabel", parentPage)
-    Label.Size = UDim2.new(1, 0, 0, 30)
-    Label.BackgroundTransparency = 1
-    Label.Text = string.upper(name)
-    Label.TextColor3 = Luna.Theme.TextDark
-    Label.Font = Enum.Font.GothamBold
-    Label.TextSize = 12
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-end
-
-function Luna:Toggle(tabName, name, flagName, callback, sliderConfig, keybindConfig)
-    local parentPage = Pages[tabName] and Pages[tabName].Page
-    if not parentPage then return nil end
-
-    local hasSlider = sliderConfig ~= nil
-    local collapsedHeight = 48
-    local expandedHeight = hasSlider and 88 or 48
-
-    local Container = Instance.new("Frame", parentPage)
-    Container.Size = UDim2.new(1, -15, 0, collapsedHeight)
-    Container.BackgroundColor3 = Luna.Theme.Panel
-    Container.BorderSizePixel = 0
-    Container.ClipsDescendants = true
-    Instance.new("UICorner", Container).CornerRadius = UDim.new(0, 10)
-
-    local TitleLabel = Instance.new("TextLabel", Container)
-    TitleLabel.Size = UDim2.new(1, -130, 0, 48)
-    TitleLabel.Position = UDim2.new(0, 15, 0, 0)
-    TitleLabel.BackgroundTransparency = 1
-    TitleLabel.Text = name
-    TitleLabel.TextColor3 = Luna.Theme.Text
-    TitleLabel.Font = Enum.Font.GothamMedium
-    TitleLabel.TextSize = 14
-    TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-    local Switch = Instance.new("Frame", Container)
-    Switch.Size = UDim2.new(0, 44, 0, 24)
-    Switch.Position = UDim2.new(1, -56, 0, 12)
-    Switch.BackgroundColor3 = Luna.Theme.ToggleOff
-    Instance.new("UICorner", Switch).CornerRadius = UDim.new(1, 0)
-
-    local Dot = Instance.new("Frame", Switch)
-    Dot.Size = UDim2.new(0, 18, 0, 18)
-    Dot.Position = UDim2.new(0, 3, 0.5, -9)
-    Dot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Instance.new("UICorner", Dot).CornerRadius = UDim.new(1, 0)
-
-    if keybindConfig then
-        local KeyButton = Instance.new("TextButton", Container)
-        KeyButton.Size = UDim2.new(0, 36, 0, 24)
-        KeyButton.Position = UDim2.new(1, -100, 0, 12)
-        KeyButton.BackgroundColor3 = Luna.Theme.Button
-        KeyButton.Text = keybindConfig.CurrentKey.Name
-        KeyButton.TextColor3 = Luna.Theme.Text
-        KeyButton.Font = Enum.Font.GothamBold
-        KeyButton.TextSize = 10
-        Instance.new("UICorner", KeyButton).CornerRadius = UDim.new(0, 6)
-
-        local listening = false
-        KeyButton.MouseButton1Click:Connect(function()
-            listening = true
-            KeyButton.Text = "..."
-        end)
-
-        UIS.InputBegan:Connect(function(i)
-            if listening and i.UserInputType == Enum.UserInputType.Keyboard then
-                listening = false
-                keybindConfig.CurrentKey = i.KeyCode
-                KeyButton.Text = keybindConfig.CurrentKey.Name
-                SaveConfig()
-                if keybindConfig.Callback then keybindConfig.Callback(keybindConfig.CurrentKey) end
-            end
-        end)
-    end
-
-    local state = flagName and Flags[flagName] or false
-    local sliderHolder = nil
-
-    if hasSlider then
-        sliderHolder = Instance.new("Frame", Container)
-        sliderHolder.Size = UDim2.new(1, -24, 0, 32)
-        sliderHolder.Position = UDim2.new(0, 12, 0, 48)
-        sliderHolder.BackgroundTransparency = 1
-
-        local initialVal = sliderConfig.Start
-        if flagName and Flags[flagName .. "Value"] ~= nil then
-            initialVal = Flags[flagName .. "Value"]
-        elseif flagName == "Aimbot" and Flags["AimFOV"] ~= nil then
-            initialVal = Flags["AimFOV"]
-        end
-
-        local sText = Instance.new("TextLabel", sliderHolder)
-        sText.Size = UDim2.new(1, 0, 0, 14)
-        sText.Position = UDim2.new(0, 0, 0, 0)
-        sText.BackgroundTransparency = 1
-        sText.Text = sliderConfig.Name .. ": " .. initialVal
-        sText.TextColor3 = Luna.Theme.TextDark
-        sText.Font = Enum.Font.GothamMedium
-        sText.TextSize = 12
-        sText.TextXAlignment = Enum.TextXAlignment.Left
-
-        local Bar = Instance.new("Frame", sliderHolder)
-        Bar.Size = UDim2.new(1, 0, 0, 6)
-        Bar.Position = UDim2.new(0, 0, 0, 20)
-        Bar.BackgroundColor3 = Luna.Theme.Button
-        Instance.new("UICorner", Bar).CornerRadius = UDim.new(1, 0)
-
-        local Fill = Instance.new("Frame", Bar)
-        Fill.Size = UDim2.new((initialVal - sliderConfig.Min) / (sliderConfig.Max - sliderConfig.Min), 0, 1, 0)
-        Fill.BackgroundColor3 = Luna.Theme.Accent
-        Instance.new("UICorner", Fill).CornerRadius = UDim.new(1, 0)
-
-        local Knob = Instance.new("Frame", Fill)
-        Knob.Size = UDim2.new(0, 10, 0, 10)
-        Knob.Position = UDim2.new(1, -5, 0.5, -5)
-        Knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        Instance.new("UICorner", Knob).CornerRadius = UDim.new(1, 0)
-
-        local Drag = false
-        local function SetVal(v)
-            v = math_round(math_clamp(v, sliderConfig.Min, sliderConfig.Max))
-            Fill.Size = UDim2.new((v - sliderConfig.Min) / (sliderConfig.Max - sliderConfig.Min), 0, 1, 0)
-            sText.Text = sliderConfig.Name .. ": " .. v
-            if flagName == "Aimbot" then
-                Flags["AimFOV"] = v
-                SaveConfig()
-            elseif flagName then
-                Flags[flagName .. "Value"] = v
-                SaveConfig()
-            end
-            if sliderConfig.Callback then sliderConfig.Callback(v) end
-        end
-
-        Bar.InputBegan:Connect(function(i)
-            if i.UserInputType == Enum.UserInputType.MouseButton1 then Drag = true end
-        end)
-        UIS.InputChanged:Connect(function(i)
-            if Drag and i.UserInputType == Enum.UserInputType.MouseMovement then
-                local x = (i.Position.X - Bar.AbsolutePosition.X) / Bar.AbsoluteSize.X
-                SetVal(sliderConfig.Min + (sliderConfig.Max - sliderConfig.Min) * x)
-            end
-        end)
-        UIS.InputEnded:Connect(function(i)
-            if i.UserInputType == Enum.UserInputType.MouseButton1 then Drag = false end
-        end)
-    end
-
-    local function SetState(newState, instant)
-        if state == newState and not instant then return end
-        state = newState
-        if flagName then
-            Flags[flagName] = state
-            SaveConfig()
-        end
-        local tInfo = TweenInfo.new(instant and 0 or 0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
-        
-        if state then
-            TweenService:Create(Switch, tInfo, {BackgroundColor3 = Luna.Theme.ToggleOn}):Play()
-            TweenService:Create(Dot, tInfo, {Position = UDim2.new(1, -21, 0.5, -9)}):Play()
-            TweenService:Create(Container, tInfo, {Size = UDim2.new(1, -15, 0, expandedHeight)}):Play()
-        else
-            TweenService:Create(Switch, tInfo, {BackgroundColor3 = Luna.Theme.ToggleOff}):Play()
-            TweenService:Create(Dot, tInfo, {Position = UDim2.new(0, 3, 0.5, -9)}):Play()
-            TweenService:Create(Container, tInfo, {Size = UDim2.new(1, -15, 0, collapsedHeight)}):Play()
-        end
-        if callback then callback(state) end
-    end
-
-    if state then SetState(true, true) end
-
-    local function Trigger()
-        SetState(not state)
-    end
-
-    TitleLabel.InputBegan:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 then Trigger() end
-    end)
-    Switch.InputBegan:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 then Trigger() end
-    end)
-
-    return Container, SetState
-end
-
-function Luna:KeybindBox(tabName, name, currentKey, callback)
-    local parentPage = Pages[tabName] and Pages[tabName].Page
-    if not parentPage then return end
-
-    local Container = Instance.new("Frame", parentPage)
-    Container.Size = UDim2.new(1, -15, 0, 48)
-    Container.BackgroundColor3 = Luna.Theme.Panel
-    Container.BorderSizePixel = 0
-    Instance.new("UICorner", Container).CornerRadius = UDim.new(0, 10)
-
-    local TitleLabel = Instance.new("TextLabel", Container)
-    TitleLabel.Size = UDim2.new(1, -120, 1, 0)
-    TitleLabel.Position = UDim2.new(0, 15, 0, 0)
-    TitleLabel.BackgroundTransparency = 1
-    TitleLabel.Text = name
-    TitleLabel.TextColor3 = Luna.Theme.Text
-    TitleLabel.Font = Enum.Font.GothamMedium
-    TitleLabel.TextSize = 14
-    TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-    local KeyButton = Instance.new("TextButton", Container)
-    KeyButton.Size = UDim2.new(0, 95, 0, 30)
-    KeyButton.Position = UDim2.new(1, -110, 0.5, -15)
-    KeyButton.BackgroundColor3 = Luna.Theme.Button
-    KeyButton.Text = currentKey.Name
-    KeyButton.TextColor3 = Luna.Theme.Text
-    KeyButton.Font = Enum.Font.GothamBold
-    KeyButton.TextSize = 12
-    Instance.new("UICorner", KeyButton).CornerRadius = UDim.new(0, 6)
-
-    local listening = false
-    KeyButton.MouseButton1Click:Connect(function()
-        listening = true
-        KeyButton.Text = "..."
-    end)
-
-    UIS.InputBegan:Connect(function(i)
-        if listening and i.UserInputType == Enum.UserInputType.Keyboard then
-            listening = false
-            currentKey = i.KeyCode
-            KeyButton.Text = currentKey.Name
-            SaveConfig()
-            if callback then callback(currentKey) end
-        end
-    end)
-end
-
-------------------------------------------------
--- ESP & AIMBOT RESOLVERS
-------------------------------------------------
-local function isPlayerKiller(p)
-    local t = p.Team and p.Team.Name:lower() or ""
-    return t:find("killer") ~= nil
-end
-
-local function isPlayerSurvivor(p)
-    local t = p.Team and p.Team.Name:lower() or ""
-    return t:find("survivor") ~= nil or t == "survivors"
-end
-
-local function addPlayer(plr)
-    if plr == LocalPlayer then return end
+-- Защита от спама (дебаунс)
+local canTrigger = true
+local cooldown = 0.5 -- время между срабатываниями в секундах
+
+local function performAction()
+    if not canTrigger then return end
+    canTrigger = false
     
-    if Drawing then
-        local c = Drawing.new("Circle")
-        c.Visible = false
-        c.Thickness = 2
-        c.Radius = 5
-        c.Color = Color3.fromRGB(0, 255, 255)
-        c.Filled = true
-        c.Transparency = 1
-        aimbotDrawings[plr] = c
-    end
-
-    local function setup(char)
-        local head = char:WaitForChild("Head", 5)
-        if not head then return end
-
-        local hl = char:FindFirstChild("ESP_HL") or Instance.new("Highlight")
-        hl.Name = "ESP_HL"
-        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        hl.FillTransparency = 1
-        hl.OutlineTransparency = 0
-        hl.Parent = char
-
-        local tag = head:FindFirstChild("ESP_TAG")
-        if not tag then
-            local bb = Instance.new("BillboardGui")
-            bb.Name = "ESP_TAG"
-            bb.Size = UDim2.new(0, 150, 0, 30)
-            bb.AlwaysOnTop = true
-            bb.Adornee = head
-            bb.StudsOffset = Vector3_new(0, 2.3, 0)
-            bb.Parent = head
-
-            local txt = Instance.new("TextLabel")
-            txt.Size = UDim2.new(1, 0, 1, 0)
-            txt.BackgroundTransparency = 1
-            txt.Font = Enum.Font.GothamBold
-            txt.TextSize = 13
-            txt.TextColor3 = Color3.fromRGB(255, 255, 255)
-            txt.Text = plr.Name
-            txt.Parent = bb
-
-            playerCache[plr] = { char = char, hl = hl, label = txt, gui = bb }
-        end
-    end
-    if plr.Character then setup(plr.Character) end
-    plr.CharacterAdded:Connect(function(char) task.wait(0.5) setup(char) end)
-end
-
-local function removePlayer(plr)
-    playerCache[plr] = nil
-    if aimbotDrawings[plr] then
-        aimbotDrawings[plr]:Remove()
-        aimbotDrawings[plr] = nil
-    end
-end
-
-local function resolveGenerator(obj)
-    if obj.Name ~= "Generator" then return nil end
-    local model = obj:IsA("Model") and obj or obj:FindFirstAncestorOfClass("Model")
-    if not model then return nil end
-    local part = model:FindFirstChildWhichIsA("BasePart")
-    if not part then return nil end
-    return model, part
-end
-
-local function addGenerator(obj)
-    local model, part = resolveGenerator(obj)
-    if not model or generatorCache[model] then return end
-
-    local hl = Instance.new("Highlight")
-    hl.Name = "GEN_HL"
-    hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-    hl.FillTransparency = 1
-    hl.OutlineTransparency = 0
-    hl.FillColor = COLORS.GeneratorIncomplete
-    hl.Enabled = Flags.GeneratorESP
-    hl.Parent = model
-
-    local bb = Instance.new("BillboardGui")
-    bb.Name = "GEN_TAG"
-    bb.Size = UDim2.new(0, 120, 0, 30)
-    bb.AlwaysOnTop = true
-    bb.Adornee = part
-    bb.Enabled = Flags.GeneratorESP
-    bb.Parent = part
-
-    local txt = Instance.new("TextLabel")
-    txt.Size = UDim2.new(1, 0, 1, 0)
-    txt.BackgroundTransparency = 1
-    txt.Font = Enum.Font.GothamBold
-    txt.TextSize = 13
-    txt.TextColor3 = Color3.fromRGB(255, 255, 255)
-    txt.Text = "0%"
-    txt.Parent = bb
-
-    generatorCache[model] = { model = model, part = part, label = txt, hl = hl, gui = bb }
-end
-
-local function scanGenerators()
-    local map = Workspace:FindFirstChild("Map")
-    if not map then return end
-    for _, obj in ipairs(map:GetDescendants()) do addGenerator(obj) end
-end
-
-Workspace.DescendantAdded:Connect(function(obj) task.wait(0.2) addGenerator(obj) end)
-Workspace.DescendantRemoving:Connect(function(obj)
-    local model = obj:IsA("Model") and obj or obj:FindFirstAncestorOfClass("Model")
-    if model and generatorCache[model] then generatorCache[model] = nil end
-end)
-
-------------------------------------------------
--- VISUALS UTILS
-------------------------------------------------
-local function applyFullbright(state)
-    if state then
-        Lighting.Brightness = 3
-        Lighting.ClockTime = 14
-        Lighting.Ambient = Color3.fromRGB(255, 255, 255)
-        Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
+    -- Использование нативной функции эксплойта Xeno для клика ПКМ
+    if mouse2press and mouse2release then
+        mouse2press()
+        task.wait(0.05) -- минимальная задержка зажатия
+        mouse2release()
+        print("[Luna Script] ПКМ успешно нажат!")
     else
-        Lighting.Brightness = OriginalLighting.Brightness
-        Lighting.ClockTime = OriginalLighting.ClockTime
-        if not Flags.NoShadows then Lighting.GlobalShadows = OriginalLighting.GlobalShadows end
-        Lighting.Ambient = OriginalLighting.Ambient
-        Lighting.OutdoorAmbient = OriginalLighting.OutdoorAmbient
+        warn("[Luna Script] Ошибка: функции mouse2press не поддерживаются вашим экплойтом!")
     end
-end
-
-local function applyNoFog(state)
-    if state then
-        Lighting.FogStart = 100
-        Lighting.FogEnd = 100
-    else
-        Lighting.FogStart = OriginalLighting.FogStart
-        Lighting.FogEnd = OriginalLighting.FogEnd
-    end
-end
-
-local function applyNoShadows(state)
-    Lighting.GlobalShadows = not state
-end
-
-local function applyNoEffect(state)
-    for _, effect in ipairs(Lighting:GetChildren()) do
-        if effect:IsA("BlurEffect") or effect:IsA("DepthOfFieldEffect") or effect:IsA("SunRaysEffect") or effect:IsA("ColorCorrectionEffect") then
-            effect.Enabled = not state
-        elseif effect:IsA("Atmosphere") then
-            effect.Density = state and 0 or 0.395
-            effect.Haze = state and 0 or 0
-        end
-    end
-end
-
-Lighting.ChildAdded:Connect(function(child)
-    if Flags.NoEffect and (child:IsA("BlurEffect") or child:IsA("DepthOfFieldEffect") or child:IsA("SunRaysEffect") or child:IsA("ColorCorrectionEffect")) then
-        child.Enabled = false
-    elseif Flags.NoEffect and child:IsA("Atmosphere") then
-        child.Density = 0
-        child.Haze = 0
-    end
-end)
-
-------------------------------------------------
--- CROSSHAIR ENGINE
-------------------------------------------------
-local function rebuildCrosshair()
-    if crosshairFrame then
-        crosshairFrame:Destroy()
-        crosshairFrame = nil
-    end
-    table_clear(crosshairParts)
-
-    if not Flags.Crosshair then return end
-
-    crosshairGui = crosshairGui or Instance.new("ScreenGui", GuiParent)
-    crosshairGui.Name = "RainbowCrosshairGui"
-    crosshairGui.ResetOnSpawn = false
-    crosshairGui.IgnoreGuiInset = true
-
-    crosshairFrame = Instance.new("Frame")
-    crosshairFrame.Name = "CrosshairContainer"
-    crosshairFrame.Size = UDim2.new(0, 40, 0, 40)
-    crosshairFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-    crosshairFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-    crosshairFrame.BackgroundTransparency = 1
-    crosshairFrame.Parent = crosshairGui
-
-    local cType = Flags.CrosshairType or "Cross"
-    local color = COLORS.BrightGreen
-
-    local function createPart(size, pos, anchor, isCircular)
-        local f = Instance.new("Frame")
-        f.Size = size
-        f.Position = pos
-        f.AnchorPoint = anchor or Vector2.new(0.5, 0.5)
-        f.BackgroundColor3 = color
-        f.BorderSizePixel = 0
-        if isCircular then
-            Instance.new("UICorner", f).CornerRadius = UDim.new(1, 0)
-        end
-        f.Parent = crosshairFrame
-        table_insert(crosshairParts, f)
-        return f
-    end
-
-    if cType == "Dot" then
-        createPart(UDim2.new(0, 6, 0, 6), UDim2.new(0.5, 0, 0.5, 0), Vector2.new(0.5, 0.5), true)
-    elseif cType == "Cross" then
-        createPart(UDim2.new(0, 10, 0, 2), UDim2.new(0.5, 0, 0.5, 0))
-        createPart(UDim2.new(0, 2, 0, 10), UDim2.new(0.5, 0, 0.5, 0))
-    elseif cType == "Ring" then
-        local ring = Instance.new("Frame")
-        ring.Size = UDim2.new(0, 10, 0, 10)
-        ring.Position = UDim2.new(0.5, 0, 0.5, 0)
-        ring.AnchorPoint = Vector2.new(0.5, 0.5)
-        ring.BackgroundTransparency = 1
-        ring.Parent = crosshairFrame
-
-        Instance.new("UICorner", ring).CornerRadius = UDim.new(1, 0)
-
-        local stroke = Instance.new("UIStroke", ring)
-        stroke.Thickness = 2
-        stroke.Color = color
-        stroke.Parent = ring
-
-        table_insert(crosshairParts, ring)
-    elseif cType == "Hook" then
-        local crosshairSize = 16
-        local verticalOffset = 0
-        local hookLength = 8
-
-        crosshairFrame.Size = UDim2.new(0, crosshairSize, 0, crosshairSize)
-        crosshairFrame.Position = UDim2.new(0.5, 0, 0.5, verticalOffset)
-
-        local function createLine(name, size, position)
-            local line = Instance.new("Frame")
-            line.Name = name
-            line.Size = size
-            line.Position = position
-            line.AnchorPoint = Vector2.new(0.5, 0.5)
-            line.BorderSizePixel = 0
-            line.BackgroundColor3 = color
-            line.Parent = crosshairFrame
-            table_insert(crosshairParts, line)
-            return line
-        end
-
-        createLine("Center_H", UDim2.new(1, 0, 0, 1), UDim2.new(0.5, 0, 0.5, 0))
-        createLine("Center_V", UDim2.new(0, 1, 1, 0), UDim2.new(0.5, 0, 0.5, 0))
-        createLine("Top_Hook", UDim2.new(0, hookLength, 0, 1), UDim2.new(0.5, hookLength / 2, 0, 0))
-        createLine("Right_Hook", UDim2.new(0, 1, 0, hookLength), UDim2.new(1, 0, 0.5, hookLength / 2))
-        createLine("Bottom_Hook", UDim2.new(0, hookLength, 0, 1), UDim2.new(0.5, -hookLength / 2, 1, 0))
-        createLine("Left_Hook", UDim2.new(0, 1, 0, hookLength), UDim2.new(0, 0, 0.5, -hookLength / 2))
-    end
-end
-
-local function toggleCrosshair(state)
-    Flags.Crosshair = state
-    if state then
-        rebuildCrosshair()
-        if crosshairGui then crosshairGui.Enabled = true end
-    else
-        if crosshairGui then crosshairGui.Enabled = false end
-    end
-end
-
-local rotationSpeed = 90
-local colorSpeed = 0.5
-local hue = 0
-
-RunService.RenderStepped:Connect(function(deltaTime)
-    if Flags.Crosshair and crosshairFrame and crosshairGui and crosshairGui.Enabled then
-        local cType = Flags.CrosshairType or "Cross"
-        if cType == "Hook" then
-            crosshairFrame.Rotation = (crosshairFrame.Rotation + rotationSpeed * deltaTime) % 360
-            hue = (hue + colorSpeed * deltaTime) % 1
-            local rainbowColor = Color3.fromHSV(hue, 1, 1)
-
-            for _, part in ipairs(crosshairParts) do
-                if part:IsA("Frame") then
-                    part.BackgroundColor3 = rainbowColor
-                end
-            end
-        else
-            crosshairFrame.Rotation = 0
-            for _, part in ipairs(crosshairParts) do
-                if part:IsA("Frame") then
-                    local stroke = part:FindFirstChildOfClass("UIStroke")
-                    if stroke then
-                        stroke.Color = COLORS.BrightGreen
-                    else
-                        part.BackgroundColor3 = COLORS.BrightGreen
-                    end
-                end
-            end
-        end
-    end
-end)
-
-------------------------------------------------
--- AUTO PARRY V2 (BETA INTEGRATED)
-------------------------------------------------
-
-local ATTACK_IDS = {
-    ["rbxassetid://129784271201071"] = true, -- Jeff lunge
-    ["rbxassetid://117042998468241"] = true, -- Mask lunge
-    ["rbxassetid://105374834496520"] = true, -- Jacket lunge
-    ["rbxassetid://115244153053858"] = true, -- Jacket Cobra lunge
-    ["rbxassetid://117070354890871"] = true, -- Jacket Ash lunge
-    ["rbxassetid://122812055447896"] = true, -- Vale lunge
-    ["rbxassetid://135002183282873"] = true, -- Doctor lunge
-    ["rbxassetid://118907603246885"] = true, -- Knight lunge
-    ["rbxassetid://113255068724446"] = true, -- Hayden lunge
-    ["rbxassetid://110355011987939"] = true, -- Jason lunge
-
-    ["rbxassetid://138720291317243"] = true, -- Jacket Tony attack
-    ["rbxassetid://132817836308238"] = true, -- Jeff attack
-    ["rbxassetid://133963973694098"] = true, -- Mask attack
-    ["rbxassetid://111920872708571"] = true, -- Jacket attack
-    ["rbxassetid://130593238885843"] = true, -- Jacket Cobra attack
-    ["rbxassetid://106871536134254"] = true, -- Jacket Ash attack
-    ["rbxassetid://78935059863801"] = true, -- Vale attack
-    ["rbxassetid://121216847022485"] = true, -- Doctor attack
-    ["rbxassetid://78432063483146"] = true, -- Knight attack
-    ["rbxassetid://74968262036854"] = true, -- Hayden attack
-    ["rbxassetid://139369275981139"] = true, -- Jason attack
-
-    ["rbxassetid://80411309607666"] = true, -- Knight ability
-    ["rbxassetid://98163597193511"] = true, -- Hayden ability
-}
-
-local KNIGHT_ABILITY_DISTANCE  = 20
-local POINT_BLANK_DISTANCE     = 4
-local KNIGHT_ABILITY_THRESHOLD = 0.30
-local KNIGHT_ABILITY_ID        = "rbxassetid://80411309607666"
-
-local parryConnections = {}
-local enemyRootCache   = {}
-local activeAttacks    = {}
-local triggeredTracks  = {}
-
-local parryEvent = nil
-pcall(function()
-    local remotes = ReplicatedStorage:FindFirstChild("Remotes")
-    local items   = remotes and remotes:FindFirstChild("Items")
-    local dagger  = items and items:FindFirstChild("Parry Dagger")
-    if dagger then
-        parryEvent = dagger:FindFirstChild("parry")
-    end
-end)
-
-local function instantParry(isKnightAbility)
-    if isKnightAbility then
-        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.LeftControl, false, game)
-        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.LeftControl, false, game)
-        return
-    end
-
-    if parryEvent then
-        pcall(function()
-            parryEvent:FireServer()
-        end)
-    end
-
-    VirtualInputManager:SendMouseButtonEvent(0, 0, 1, true, game, 0)
-    VirtualInputManager:SendMouseButtonEvent(0, 0, 1, false, game, 0)
-end
-
-local function getAnimationId(track)
-    if not track or not track.Animation then return nil end
-    return tostring(track.Animation.AnimationId):lower()
-end
-
-local function removeAttack(track)
-    if track then
-        activeAttacks[track] = nil
-    end
-end
-
-local function validateAttack(attack)
-    if attack.triggered then return false end
-    if not Flags.AutoParry then return false end
-
-    local player = attack.player
-    if not player or not player.Parent then return false end
-
-    local enemyCharacter = player.Character
-    if not enemyCharacter then return false end
-
-    local enemyRoot = attack.enemyRoot
-    if not enemyRoot or not enemyRoot.Parent then
-        enemyRoot = enemyCharacter:FindFirstChild("HumanoidRootPart")
-        if not enemyRoot then return false end
-        attack.enemyRoot = enemyRoot
-        enemyRootCache[player] = enemyRoot
-    end
-
-    local myCharacter = LocalPlayer.Character
-    if not myCharacter then return false end
-
-    local myRoot = myCharacter:FindFirstChild("HumanoidRootPart")
-    if not myRoot then return false end
-
-    local isKnightAbility = attack.animId == KNIGHT_ABILITY_ID
-    local maxDistance = isKnightAbility and KNIGHT_ABILITY_DISTANCE or (Flags.ParryDistance or 10)
-
-    local diff = myRoot.Position - enemyRoot.Position
-    local distanceSquared = diff:Dot(diff)
-
-    if distanceSquared < 0.000001 then return false end
-    local distance = math_sqrt(distanceSquared)
-
-    if not isKnightAbility and distance <= POINT_BLANK_DISTANCE then
-        attack.pointBlank = true
-        return true, false
-    end
-
-    if distance > maxDistance then return false end
-
-    local direction = diff * (1 / distance)
-    local dot = enemyRoot.CFrame.LookVector:Dot(direction)
-    local threshold
-
-    if isKnightAbility then
-        threshold = KNIGHT_ABILITY_THRESHOLD
-    else
-        local angle = math_clamp(Flags.TerrorAngle or 90, 0, 360)
-        threshold = math_cos(math_rad(angle * 0.5))
-    end
-
-    if dot < threshold then return false end
-
-    return true, isKnightAbility
-end
-
-local function fireParry(attack, isKnightAbility)
-    if attack.triggered then return end
-    attack.triggered = true
-    attack.isKnightAbility = isKnightAbility
-
-    local track = attack.track
-    if track then
-        triggeredTracks[track] = true
-        activeAttacks[track] = nil
-    end
-
-    instantParry(isKnightAbility)
-
-    if track then
-        task.spawn(function()
-            if track.IsPlaying then
-                track.Stopped:Wait()
-            end
-            triggeredTracks[track] = nil
-        end)
-    end
-end
-
-local function checkAttack(attack)
-    if attack.triggered then return true end
-    local track = attack.track
-    if not track then return false end
-
-    if not track.IsPlaying then
-        removeAttack(track)
-        triggeredTracks[track] = nil
-        return false
-    end
-
-    if track.Length > 0 and track.TimePosition >= track.Length then
-        removeAttack(track)
-        triggeredTracks[track] = nil
-        return false
-    end
-
-    local ok, isKnight = validateAttack(attack)
-    if not ok then return false end
-
-    fireParry(attack, isKnight)
-    return true
-end
-
-local function registerAttack(track, player)
-    if not Flags.AutoParry then return end
-    if not track or not track.Animation then return end
-    if triggeredTracks[track] or activeAttacks[track] then return end
-
-    if not player.Team or player.Team.Name ~= "Killer" then return end
-
-    local animId = getAnimationId(track)
-    if not animId or not ATTACK_IDS[animId] then return end
-
-    local enemyRoot = enemyRootCache[player]
-    if not enemyRoot or not enemyRoot.Parent then
-        local character = player.Character
-        if not character then return end
-        enemyRoot = character:FindFirstChild("HumanoidRootPart")
-        if not enemyRoot then return end
-        enemyRootCache[player] = enemyRoot
-    end
-
-    local attack = {
-        track = track,
-        player = player,
-        enemyRoot = enemyRoot,
-        animId = animId,
-        triggered = false,
-        pointBlank = false,
-        isKnightAbility = animId == KNIGHT_ABILITY_ID,
-    }
-
-    activeAttacks[track] = attack
-
-    if checkAttack(attack) then return end
-
-    track.Stopped:Connect(function()
-        activeAttacks[track] = nil
-        triggeredTracks[track] = nil
+    
+    task.delay(cooldown, function()
+        canTrigger = true
     end)
 end
 
-local function watchCharacter(player, character)
-    if parryConnections[player] then
-        for _, connection in ipairs(parryConnections[player]) do
-            connection:Disconnect()
-        end
-        parryConnections[player] = nil
-    end
+-- Функция проверки персонажей в радиусе
+local function checkNearbyTargets()
+    local character = localPlayer.Character
+    if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+    
+    local myRootPos = character.HumanoidRootPart.Position
 
-    local humanoid = character:WaitForChild("Humanoid", 5)
-    if not humanoid then return end
-
-    local animator = humanoid:WaitForChild("Animator", 5)
-    if not animator then return end
-
-    local root = character:WaitForChild("HumanoidRootPart", 5)
-    if not root then return end
-
-    enemyRootCache[player] = root
-
-    local connectionsList = {}
-    parryConnections[player] = connectionsList
-
-    connectionsList[#connectionsList + 1] = animator.AnimationPlayed:Connect(function(track)
-        if Flags.AutoParry then
-            registerAttack(track, player)
-        end
-    end)
-
-    if Flags.AutoParry then
-        for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
-            registerAttack(track, player)
-        end
-    end
-end
-
-local function watchPlayer(player)
-    if player == LocalPlayer then return end
-    if player.Character then
-        watchCharacter(player, player.Character)
-    end
-    player.CharacterAdded:Connect(function(character)
-        watchCharacter(player, character)
-    end)
-end
-
-for _, player in ipairs(Players:GetPlayers()) do
-    watchPlayer(player)
-end
-
-Players.PlayerAdded:Connect(watchPlayer)
-
-Players.PlayerRemoving:Connect(function(player)
-    enemyRootCache[player] = nil
-    if parryConnections[player] then
-        for _, connection in ipairs(parryConnections[player]) do
-            connection:Disconnect()
-        end
-        parryConnections[player] = nil
-    end
-
-    for track, attack in pairs(activeAttacks) do
-        if attack.player == player then
-            activeAttacks[track] = nil
-        end
-    end
-end)
-
-RunService.RenderStepped:Connect(function()
-    if not Flags.AutoParry then return end
-    for track, attack in pairs(activeAttacks) do
-        checkAttack(attack)
-    end
-end)
-
-------------------------------------------------
--- PARRY RING & SPARKLES
-------------------------------------------------
-local ringSegments = {}
-local SEGMENT_COUNT = 24
-
-local function updateSparkles(myHRP, isDanger)
-    if not sparklesFolder then
-        sparklesFolder = Instance.new("Folder")
-        sparklesFolder.Name = "LunaSparkles"
-        sparklesFolder.Parent = Workspace
-    end
-
-    if math_random() < 0.3 and myHRP then
-        local angle = math_random() * math.pi * 2
-        local dist = math_random() * Flags.ParryDistance
-        local offsetX = math.cos(angle) * dist
-        local offsetZ = math.sin(angle) * dist
-        
-        local spark = Instance.new("Part")
-        spark.Size = Vector3_new(0.15, 0.15, 0.15)
-        spark.Shape = Enum.PartType.Ball
-        spark.Material = Enum.Material.Neon
-        spark.Color = isDanger and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(0, 210, 255)
-        spark.Transparency = 0.3
-        spark.Anchored = true
-        spark.CanCollide = false
-        spark.CastShadow = false
-        spark.Position = myHRP.Position + Vector3_new(offsetX, -2.8, offsetZ)
-        spark.Parent = sparklesFolder
-
-        task.spawn(function()
-            local startTime = tick()
-            local duration = 1.2
-            while spark and spark.Parent and (tick() - startTime) < duration do
-                local alpha = (tick() - startTime) / duration
-                spark.Position = spark.Position + Vector3_new(0, 0.05, 0)
-                spark.Transparency = 0.3 + (alpha * 0.7)
-                task.wait(0.03)
-            end
-            if spark then spark:Destroy() end
-        end)
-    end
-end
-
-local function updateParryRing()
-    if Flags.ParryRing then
-        local char = LocalPlayer.Character
-        local myHRP = char and char:FindFirstChild("HumanoidRootPart")
-
-        local killerInside = false
-        if myHRP then
-            for _, player in ipairs(Players:GetPlayers()) do
-                if player ~= LocalPlayer and isPlayerKiller(player) then
-                    local kChar = player.Character
-                    local kHRP = kChar and kChar:FindFirstChild("HumanoidRootPart")
-                    if kHRP then
-                        if (myHRP.Position - kHRP.Position).Magnitude <= Flags.ParryDistance then
-                            killerInside = true
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= localPlayer and player.Character then
+            local enemyChar = player.Character
+            local enemyRoot = enemyChar:FindFirstChild("HumanoidRootPart")
+            local humanoid = enemyChar:FindFirstChildOfClass("Humanoid")
+            
+            if enemyRoot and humanoid then
+                local distance = (myRootPos - enemyRoot.Position).Magnitude
+                
+                if distance <= RADIUS then
+                    -- Проверяем играющие анимации по нашему списку
+                    for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
+                        local animId = track.Animation.AnimationId
+                        -- Если ID анимации есть в таблице и она проигрывается
+                        if track.IsPlaying and targetAnimId[animId] then 
+                            performAction()
                             break
                         end
                     end
                 end
             end
         end
-
-        local ringColor = killerInside and Color3.fromRGB(255, 60, 60) or Color3.fromRGB(0, 210, 255)
-
-        if not ringPartsFolder or not ringPartsFolder.Parent then
-            ringPartsFolder = Instance.new("Folder")
-            ringPartsFolder.Name = "LunaRingSegments"
-            ringPartsFolder.Parent = Workspace
-            table_clear(ringSegments)
-
-            for i = 1, SEGMENT_COUNT do
-                local seg = Instance.new("Part")
-                seg.Name = "Segment_" .. i
-                seg.Size = Vector3_new(0.12, 0.08, 1)
-                seg.Material = Enum.Material.Neon
-                seg.Transparency = 0.2
-                seg.Anchored = true
-                seg.CanCollide = false
-                seg.CastShadow = false
-                
-                local light = Instance.new("PointLight")
-                light.Name = "SegmentLight"
-                light.Brightness = 1.5
-                light.Range = 4
-                light.Color = ringColor
-                light.Parent = seg
-
-                seg.Parent = ringPartsFolder
-                table_insert(ringSegments, seg)
-            end
-        end
-
-        if myHRP and ringPartsFolder then
-            ringPartsFolder.Parent = Workspace
-            local radius = Flags.ParryDistance
-            local centerPos = myHRP.Position + Vector3_new(0, -2.8, 0)
-            local circumference = 2 * math.pi * radius
-            local segmentLength = (circumference / SEGMENT_COUNT) * 1.05
-
-            for i, seg in ipairs(ringSegments) do
-                seg.Color = ringColor
-                local light = seg:FindFirstChild("SegmentLight")
-                if light then light.Color = ringColor end
-                
-                local angle = ((i - 1) / SEGMENT_COUNT) * (2 * math.pi)
-                local nextAngle = (i / SEGMENT_COUNT) * (2 * math.pi)
-                
-                local x = math.cos(angle) * radius
-                local z = math.sin(angle) * radius
-                local pos = centerPos + Vector3_new(x, 0, z)
-                
-                seg.Size = Vector3_new(0.12, 0.08, segmentLength)
-                seg.CFrame = CFrame_new(pos, centerPos + Vector3_new(math.cos(nextAngle) * radius, 0, math.sin(nextAngle) * radius)) * CFrame_new(0, 0, -segmentLength/2)
-            end
-
-            updateSparkles(myHRP, killerInside)
-        end
-    else
-        if ringPartsFolder then
-            ringPartsFolder:Destroy()
-            ringPartsFolder = nil
-            table_clear(ringSegments)
-        end
-        if sparklesFolder then
-            sparklesFolder:ClearAllChildren()
-        end
     end
 end
 
-------------------------------------------------
--- VEIL AIMBOT BALLISTIC MATH
-------------------------------------------------
-local function CalculateExactAimPoint(targetPos)
-    local startPos = Camera.CFrame.Position
-    local rel = targetPos - startPos
-    
-    local dx = Vector3_new(rel.X, 0, rel.Z).Magnitude
-    local dy = rel.Y
-    
-    if dx < 1 then return nil end
-
-    local v = 120.0
-    local g = 52.0
-
-    local a = (g * dx * dx) / (2 * v * v)
-    local b = -dx
-    local c = dy + a
-
-    local discriminant = (b * b) - (4 * a * c)
-    if discriminant < 0 then return nil end
-
-    local tanTheta = (-b - math_sqrt(discriminant)) / (2 * a)
-    local theta = math_atan(tanTheta) - math_rad(2.0)
-    local adjustedTanTheta = math.tan(theta)
-
-    local dirX = rel.X / dx
-    local dirZ = rel.Z / dx
-
-    local finalDir = Vector3_new(dirX, adjustedTanTheta, dirZ).Unit
-    return startPos + (finalDir * dx)
-end
-
-------------------------------------------------
--- INITIALIZING TABS
-------------------------------------------------
-Luna:Tab("Combat", 1)
-Luna:Tab("Visuals", 2)
-Luna:Tab("Movement", 3)
-Luna:Tab("Settings", 4)
-
-Luna:Category("Combat", "PvP & Utilities")
-
--- Auto Parry UI Component
-do
-    local parentPage = Pages["Combat"] and Pages["Combat"].Page
-    local Container = Instance.new("Frame", parentPage)
-    Container.Size = UDim2.new(1, -15, 0, 48)
-    Container.BackgroundColor3 = Luna.Theme.Panel
-    Container.BorderSizePixel = 0
-    Container.ClipsDescendants = true
-    Instance.new("UICorner", Container).CornerRadius = UDim.new(0, 10)
-
-    local TitleLabel = Instance.new("TextLabel", Container)
-    TitleLabel.Size = UDim2.new(1, -190, 0, 48)
-    TitleLabel.Position = UDim2.new(0, 15, 0, 0)
-    TitleLabel.BackgroundTransparency = 1
-    TitleLabel.Text = "Auto Parry"
-    TitleLabel.TextColor3 = Luna.Theme.Text
-    TitleLabel.Font = Enum.Font.GothamMedium
-    TitleLabel.TextSize = 14
-    TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-    local Switch = Instance.new("Frame", Container)
-    Switch.Size = UDim2.new(0, 44, 0, 24)
-    Switch.Position = UDim2.new(1, -56, 0, 12)
-    Switch.BackgroundColor3 = Luna.Theme.ToggleOff
-    Instance.new("UICorner", Switch).CornerRadius = UDim.new(1, 0)
-
-    local Dot = Instance.new("Frame", Switch)
-    Dot.Size = UDim2.new(0, 18, 0, 18)
-    Dot.Position = UDim2.new(0, 3, 0.5, -9)
-    Dot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Instance.new("UICorner", Dot).CornerRadius = UDim.new(1, 0)
-
-    local sliderHolder = Instance.new("Frame", Container)
-    sliderHolder.Size = UDim2.new(1, -24, 0, 32)
-    sliderHolder.Position = UDim2.new(0, 12, 0, 48)
-    sliderHolder.BackgroundTransparency = 1
-
-    local currentDistVal = Flags.ParryDistance or 10
-
-    local sText = Instance.new("TextLabel", sliderHolder)
-    sText.Size = UDim2.new(0, 140, 0, 14)
-    sText.Position = UDim2.new(0, 0, 0, 0)
-    sText.BackgroundTransparency = 1
-    sText.Text = "Distance: " .. currentDistVal
-    sText.TextColor3 = Luna.Theme.TextDark
-    sText.Font = Enum.Font.GothamMedium
-    sText.TextSize = 12
-    sText.TextXAlignment = Enum.TextXAlignment.Left
-
-    local Bar = Instance.new("Frame", sliderHolder)
-    Bar.Size = UDim2.new(0.42, 0, 0, 6)
-    Bar.Position = UDim2.new(0, 0, 0, 20)
-    Bar.BackgroundColor3 = Luna.Theme.Button
-    Instance.new("UICorner", Bar).CornerRadius = UDim.new(1, 0)
-
-    local Fill = Instance.new("Frame", Bar)
-    Fill.Size = UDim2.new(currentDistVal / 15, 0, 1, 0)
-    Fill.BackgroundColor3 = Luna.Theme.Accent
-    Instance.new("UICorner", Fill).CornerRadius = UDim.new(1, 0)
-
-    local Knob = Instance.new("Frame", Fill)
-    Knob.Size = UDim2.new(0, 10, 0, 10)
-    Knob.Position = UDim2.new(1, -5, 0.5, -5)
-    Knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Instance.new("UICorner", Knob).CornerRadius = UDim.new(1, 0)
-
-    local RingSwitch = Instance.new("Frame", sliderHolder)
-    RingSwitch.Size = UDim2.new(0, 36, 0, 20)
-    RingSwitch.Position = UDim2.new(0.42, 16, 0, 13)
-    RingSwitch.BackgroundColor3 = Luna.Theme.ToggleOff
-    Instance.new("UICorner", RingSwitch).CornerRadius = UDim.new(1, 0)
-
-    local RingDot = Instance.new("Frame", RingSwitch)
-    RingDot.Size = UDim2.new(0, 14, 0, 14)
-    RingDot.Position = UDim2.new(0, 3, 0.5, -7)
-    RingDot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Instance.new("UICorner", RingDot).CornerRadius = UDim.new(1, 0)
-
-    local RingLabel = Instance.new("TextLabel", sliderHolder)
-    RingLabel.Size = UDim2.new(0, 80, 0, 20)
-    RingLabel.Position = UDim2.new(0.42, 58, 0, 13)
-    RingLabel.BackgroundTransparency = 1
-    RingLabel.Text = "Ring"
-    RingLabel.TextColor3 = Luna.Theme.TextDark
-    RingLabel.Font = Enum.Font.GothamMedium
-    RingLabel.TextSize = 11
-    RingLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-    local ringState = Flags.ParryRing or false
-    local function ToggleRing(instant)
-        if not instant then
-            ringState = not ringState
-        else
-            ringState = Flags.ParryRing
-        end
-        Flags.ParryRing = ringState
-        SaveConfig()
-        local tInfo = TweenInfo.new(instant and 0 or 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        if ringState then
-            TweenService:Create(RingSwitch, tInfo, {BackgroundColor3 = Luna.Theme.ToggleOn}):Play()
-            TweenService:Create(RingDot, tInfo, {Position = UDim2.new(1, -17, 0.5, -7)}):Play()
-        else
-            TweenService:Create(RingSwitch, tInfo, {BackgroundColor3 = Luna.Theme.ToggleOff}):Play()
-            TweenService:Create(RingDot, tInfo, {Position = UDim2.new(0, 3, 0.5, -7)}):Play()
-        end
-    end
-    if ringState then ToggleRing(true) end
-
-    RingSwitch.InputBegan:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 then ToggleRing(false) end
-    end)
-
-    local Drag = false
-    local function SetDistVal(v)
-        v = math_round(math_clamp(v, 0, 15))
-        Flags.ParryDistance = v
-        SaveConfig()
-        Fill.Size = UDim2.new(v / 15, 0, 1, 0)
-        sText.Text = "Distance: " .. v
-    end
-
-    Bar.InputBegan:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 then Drag = true end
-    end)
-    UIS.InputChanged:Connect(function(i)
-        if Drag and i.UserInputType == Enum.UserInputType.MouseMovement then
-            local x = (i.Position.X - Bar.AbsolutePosition.X) / Bar.AbsoluteSize.X
-            SetDistVal(15 * x)
-        end
-    end)
-    UIS.InputEnded:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 then Drag = false end
-    end)
-
-    local state = Flags.AutoParry or false
-    local function SetState(newState, instant)
-        if state == newState and not instant then return end
-        state = newState
-        Flags.AutoParry = state
-        SaveConfig()
-        local tInfo = TweenInfo.new(instant and 0 or 0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
-        if state then
-            TweenService:Create(Switch, tInfo, {BackgroundColor3 = Luna.Theme.ToggleOn}):Play()
-            TweenService:Create(Dot, tInfo, {Position = UDim2.new(1, -21, 0.5, -9)}):Play()
-            TweenService:Create(Container, tInfo, {Size = UDim2.new(1, -15, 0, 88)}):Play()
-        else
-            TweenService:Create(Switch, tInfo, {BackgroundColor3 = Luna.Theme.ToggleOff}):Play()
-            TweenService:Create(Dot, tInfo, {Position = UDim2.new(0, 3, 0.5, -9)}):Play()
-            TweenService:Create(Container, tInfo, {Size = UDim2.new(1, -15, 0, 48)}):Play()
-        end
-    end
-
-    if state then SetState(true, true) end
-
-    local function Trigger()
-        SetState(not state, false)
-    end
-
-    Switch.InputBegan:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 then Trigger() end
-    end)
-    TitleLabel.InputBegan:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 then Trigger() end
-    end)
-end
-
-Luna:Toggle("Combat", "Auto SkillCheck", "AutoSkill", function(state) Flags.AutoSkill = state end)
-
-Luna:Toggle("Combat", "Veil Aimbot", "Aimbot", function(state) 
-    Flags.Aimbot = state 
-end, { Name = "FOV", Min = 1, Max = 50, Start = Flags.AimFOV or 50, Callback = function(v)
-    Flags.AimFOV = v
-    SaveConfig()
-end })
-
--- Crosshair UI
-do
-    local parentPage = Pages["Combat"] and Pages["Combat"].Page
-    local Container = Instance.new("Frame", parentPage)
-    Container.Size = UDim2.new(1, -15, 0, 48)
-    Container.BackgroundColor3 = Luna.Theme.Panel
-    Container.BorderSizePixel = 0
-    Container.ClipsDescendants = true
-    Instance.new("UICorner", Container).CornerRadius = UDim.new(0, 10)
-
-    local TitleLabel = Instance.new("TextLabel", Container)
-    TitleLabel.Size = UDim2.new(1, -190, 0, 48)
-    TitleLabel.Position = UDim2.new(0, 15, 0, 0)
-    TitleLabel.BackgroundTransparency = 1
-    TitleLabel.Text = "Crosshair"
-    TitleLabel.TextColor3 = Luna.Theme.Text
-    TitleLabel.Font = Enum.Font.GothamMedium
-    TitleLabel.TextSize = 14
-    TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-    local Switch = Instance.new("Frame", Container)
-    Switch.Size = UDim2.new(0, 44, 0, 24)
-    Switch.Position = UDim2.new(1, -56, 0, 12)
-    Switch.BackgroundColor3 = Luna.Theme.ToggleOff
-    Instance.new("UICorner", Switch).CornerRadius = UDim.new(1, 0)
-
-    local Dot = Instance.new("Frame", Switch)
-    Dot.Size = UDim2.new(0, 18, 0, 18)
-    Dot.Position = UDim2.new(0, 3, 0.5, -9)
-    Dot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Instance.new("UICorner", Dot).CornerRadius = UDim.new(1, 0)
-
-    local options = {"Dot", "Cross", "Ring", "Hook"}
-    local currentVal = Flags.CrosshairType or "Cross"
-
-    local StyleButton = Instance.new("TextButton", Container)
-    StyleButton.Size = UDim2.new(0, 85, 0, 24)
-    StyleButton.Position = UDim2.new(1, -150, 0, 12)
-    StyleButton.BackgroundColor3 = Luna.Theme.Button
-    StyleButton.Text = currentVal
-    StyleButton.TextColor3 = Luna.Theme.Accent
-    StyleButton.Font = Enum.Font.GothamBold
-    StyleButton.TextSize = 11
-    Instance.new("UICorner", StyleButton).CornerRadius = UDim.new(0, 6)
-
-    local OptionsHolder = Instance.new("Frame", Container)
-    OptionsHolder.Size = UDim2.new(1, -30, 0, #options * 26)
-    OptionsHolder.Position = UDim2.new(0, 15, 0, 48)
-    OptionsHolder.BackgroundTransparency = 1
-
-    local optLayout = Instance.new("UIListLayout", OptionsHolder)
-    optLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    optLayout.Padding = UDim.new(0, 2)
-
-    local isOpen = false
-
-    for i, opt in ipairs(options) do
-        local optBtn = Instance.new("TextButton", OptionsHolder)
-        optBtn.Size = UDim2.new(1, 0, 0, 26)
-        optBtn.BackgroundColor3 = Luna.Theme.Button
-        optBtn.Text = opt
-        optBtn.TextColor3 = (opt == currentVal) and Luna.Theme.Accent or Luna.Theme.TextDark
-        optBtn.Font = Enum.Font.GothamMedium
-        optBtn.TextSize = 11
-        optBtn.LayoutOrder = i
-        Instance.new("UICorner", optBtn).CornerRadius = UDim.new(0, 6)
-
-        optBtn.MouseButton1Click:Connect(function()
-            currentVal = opt
-            Flags.CrosshairType = currentVal
-            StyleButton.Text = currentVal
-            SaveConfig()
-            
-            for _, child in ipairs(OptionsHolder:GetChildren()) do
-                if child:IsA("TextButton") then
-                    child.TextColor3 = (child.Text == currentVal) and Luna.Theme.Accent or Luna.Theme.TextDark
-                end
-            end
-
-            isOpen = false
-            TweenService:Create(Container, TweenInfo.new(0.2), {Size = UDim2.new(1, -15, 0, 48)}):Play()
-            if Flags.Crosshair then rebuildCrosshair() end
-        end)
-    end
-
-    StyleButton.MouseButton1Click:Connect(function()
-        isOpen = not isOpen
-        local targetSize = isOpen and (48 + #options * 28 + 6) or 48
-        TweenService:Create(Container, TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = UDim2.new(1, -15, 0, targetSize)}):Play()
-    end)
-
-    local state = Flags.Crosshair or false
-    local function SetState(newState, instant)
-        state = newState
-        Flags.Crosshair = state
-        SaveConfig()
-        local tInfo = TweenInfo.new(instant and 0 or 0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
-        if state then
-            TweenService:Create(Switch, tInfo, {BackgroundColor3 = Luna.Theme.ToggleOn}):Play()
-            TweenService:Create(Dot, tInfo, {Position = UDim2.new(1, -21, 0.5, -9)}):Play()
-            toggleCrosshair(true)
-        else
-            TweenService:Create(Switch, tInfo, {BackgroundColor3 = Luna.Theme.ToggleOff}):Play()
-            TweenService:Create(Dot, tInfo, {Position = UDim2.new(0, 3, 0.5, -9)}):Play()
-            toggleCrosshair(false)
-        end
-    end
-
-    if state then SetState(true, true) end
-
-    local function Trigger()
-        SetState(not state, false)
-    end
-
-    Switch.InputBegan:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 then Trigger() end
-    end)
-    TitleLabel.InputBegan:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 then Trigger() end
-    end)
-end
-
-------------------------------------------------
--- INTEGRATED SOULS LOGIC (VISUALS TAB TOP)
-------------------------------------------------
-local soulsFolder = workspace:FindFirstChild("LunaSouls") or Instance.new("Folder", workspace)
-soulsFolder.Name = "LunaSouls"
-
-local R = 1.25
-local SPD = 1.8
-local SIZE = .22
-local HEIGHT = 3
-
-local soulColors = {
-    Color3.fromRGB(190, 120, 255),
-    Color3.fromRGB(130, 190, 255),
-    Color3.fromRGB(100, 240, 255)
-}
-
-local soulsData = {}
-
-local function createSoulPart(s, t, c)
-    local p = Instance.new("Part")
-    p.Size = Vector3.one * s
-    p.Shape = Enum.PartType.Ball
-    p.Material = Enum.Material.Neon
-    p.Color = c
-    p.Transparency = t
-    p.Anchored = true
-    p.CanCollide = false
-    p.CastShadow = false
-    p.Parent = soulsFolder
-    return p
-end
-
-local function buildSoul(c)
-    local a = {
-        createSoulPart(SIZE, 0, c),
-        createSoulPart(SIZE * 2.1, .6, c),
-        createSoulPart(SIZE * 3.5, .82, c)
-    }
-
-    local l = Instance.new("PointLight", a[1])
-    l.Color = c
-    l.Brightness = 2
-    l.Range = 6
-
-    local at = Instance.new("Attachment", a[1])
-
-    local sm = Instance.new("ParticleEmitter", at)
-    sm.Texture = "rbxasset://textures/particles/smoke_main.dds"
-    sm.Color = ColorSequence.new(c)
-    sm.Rate = 15
-    sm.Lifetime = NumberRange.new(1, 2)
-    sm.Speed = NumberRange.new(.1, .3)
-    sm.Size = NumberSequence.new(.4)
-    sm.Transparency = NumberSequence.new(0.5, 1)
-
-    return a
-end
-
-local function getHookCount(p)
-    return math.clamp(3 - (p:GetAttribute("HookCount") or 0), 0, 3)
-end
-
-local function clearSoul(p)
-    local d = soulsData[p]
-    if not d then return end
-    for _, g in ipairs(d) do
-        for _, v in ipairs(g) do
-            v:Destroy()
-        end
-    end
-    soulsData[p] = nil
-end
-
-local function buildPlayerSouls(p)
-    clearSoul(p)
-    if not Flags.LunaSouls then return end
-
-    local n = getHookCount(p)
-    if n == 0 then return end
-
-    soulsData[p] = {}
-    for i = 1, n do
-        table_insert(soulsData[p], buildSoul(soulColors[i]))
-    end
-end
-
-local function setupSoulPlayer(p)
-    p.CharacterAdded:Connect(function()
-        task.wait(.5)
-        if Flags.LunaSouls then
-            buildPlayerSouls(p)
-        end
-    end)
-
-    p:GetAttributeChangedSignal("HookCount"):Connect(function()
-        if Flags.LunaSouls then
-            buildPlayerSouls(p)
-        end
-    end)
-
-    if p.Character and Flags.LunaSouls then
-        buildPlayerSouls(p)
-    end
-end
-
-for _, p in ipairs(Players:GetPlayers()) do
-    setupSoulPlayer(p)
-end
-
-Players.PlayerAdded:Connect(setupSoulPlayer)
-Players.PlayerRemoving:Connect(clearSoul)
-
-local soulsAnimTime = 0
-
-RunService.RenderStepped:Connect(function(dt)
-    if not Flags.LunaSouls then 
-        soulsFolder.Parent = nil
-        return 
-    end
-    soulsFolder.Parent = workspace
-
-    soulsAnimTime += dt * SPD
-
-    for p, list in pairs(soulsData) do
-        local c = p.Character
-        local rootPart = c and (c:FindFirstChild("UpperTorso") or c:FindFirstChild("Torso") or c:FindFirstChild("HumanoidRootPart"))
-
-        if rootPart then
-            local n = #list
-            for i, g in ipairs(list) do
-                local add = (i - 1) * (math.pi * 2 / n)
-                local a = soulsAnimTime + add
-                local bob = math.sin(os.clock() * 2 + i) * .12
-
-                local pos = rootPart.Position + Vector3.new(
-                    math.cos(a) * R,
-                    HEIGHT + bob,
-                    math.sin(a) * R
-                )
-
-                for _, v in ipairs(g) do
-                    v.Position = pos
-                end
-
-                local b = 1 + math.sin(os.clock() * 3 + i) * .05
-                g[1].Size = Vector3.one * (SIZE * b)
-                g[2].Size = Vector3.one * (SIZE * 2.1 * b)
-                g[3].Size = Vector3.one * (SIZE * 3.5 * b)
-            end
-        end
-    end
-end)
-
-local function addSoulFx(g)
-    local a = g[1]:FindFirstChildOfClass("Attachment")
-    if not a then return end
-
-    local sp = Instance.new("ParticleEmitter", a)
-    sp.Texture = "rbxasset://textures/particles/sparkles_main.dds"
-    sp.Color = ColorSequence.new(g[1].Color)
-    sp.Rate = .8
-    sp.Lifetime = NumberRange.new(.3, .7)
-    sp.Speed = NumberRange.new(.2, .6)
-    sp.Size = NumberSequence.new(.06)
-    sp.LightEmission = 1
-end
-
-task.spawn(function()
-    while true do
-        if Flags.LunaSouls then
-            for _, list in pairs(soulsData) do
-                for _, g in ipairs(list) do
-                    if not g[1]:FindFirstChildOfClass("ParticleEmitter") then
-                        addSoulFx(g)
-                    end
-                end
-            end
-        end
-        task.wait(3)
-    end
-end)
-
-RunService.RenderStepped:Connect(function()
-    if not Flags.LunaSouls then return end
-    local t = os.clock()
-
-    for _, list in pairs(soulsData) do
-        for _, g in ipairs(list) do
-            local l = g[1]:FindFirstChildOfClass("PointLight")
-            if l then
-                l.Brightness = 2 + math.sin(t * 4) * .25
-            end
-            g[3].Transparency = .82 + math.sin(t * 2) * .03
-        end
-    end
-end)
-
-------------------------------------------------
--- VISUALS TAB CONFIGURATION
-------------------------------------------------
-Luna:Category("Visuals", "Souls Effect")
-Luna:Toggle("Visuals", "Souls Effect", "LunaSouls", function(state)
-    Flags.LunaSouls = state
-    if state then
-        for _, p in ipairs(Players:GetPlayers()) do
-            buildPlayerSouls(p)
-        end
-    else
-        for p, _ in pairs(soulsData) do
-            clearSoul(p)
-        end
-    end
-end)
-
-Luna:Category("Visuals", "ESP")
-Luna:Toggle("Visuals", "Survivor ESP", "SurvivorESP", function(state) Flags.SurvivorESP = state end)
-Luna:Toggle("Visuals", "Killer ESP", "KillerESP", function(state) Flags.KillerESP = state end)
-Luna:Toggle("Visuals", "Generator ESP", "GeneratorESP", function(state) Flags.GeneratorESP = state end)
-
-Luna:Category("Visuals", "Camera")
-Luna:Toggle("Visuals", "FOV Changer", "FOVActive", function(state)
-    Flags.FOVActive = state
-    if not state then Camera.FieldOfView = 70 else Camera.FieldOfView = Flags.FOVValue end
-end, { Name = "FOV", Min = 70, Max = 120, Start = Flags.FOVValue or 70, Callback = function(v)
-    Flags.FOVValue = v
-    SaveConfig()
-    if Flags.FOVActive then Camera.FieldOfView = v end
-end })
-
-Luna:Category("Visuals", "World")
-Luna:Toggle("Visuals", "Fullbright", "Fullbright", function(state) Flags.Fullbright = state applyFullbright(state) end)
-Luna:Toggle("Visuals", "No Fog", "NoFog", function(state) Flags.NoFog = state applyNoFog(state) end)
-Luna:Toggle("Visuals", "No Shadows", "NoShadows", function(state) Flags.NoShadows = state applyNoShadows(state) end)
-Luna:Toggle("Visuals", "No Effect", "NoEffect", function(state) Flags.NoEffect = state applyNoEffect(state) end)
-
-Luna:Category("Movement", "General")
-Luna:Toggle("Movement", "Moonwalk", "Moonwalk", function(state) 
-    Flags.Moonwalk = state 
-    if not state then backRun = false end 
-end, nil, { CurrentKey = Config.MoonwalkKey, Callback = function(key) Config.MoonwalkKey = key end })
-
-Luna:Toggle("Movement", "Speed Hack Boost", "SpeedBoostActive", function(state)
-    Flags.SpeedBoostActive = state
-    local character = LocalPlayer.Character
-    if character then 
-        character:SetAttribute("speedboost", state and (1.0 + (Flags.SpeedBoostValue / 100)) or 1.0) 
-    end
-end, { Name = "Speed Boost %", Min = 0, Max = 100, Start = Flags.SpeedBoostValue or 0, Callback = function(v)
-    Flags.SpeedBoostValue = v
-    SaveConfig()
-    if LocalPlayer.Character and Flags.SpeedBoostValue then
-        LocalPlayer.Character:SetAttribute("speedboost", Flags.SpeedBoostActive and (1.0 + (v / 100)) or 1.0)
-    end
-end })
-
-Luna:Category("Settings", "Keybinds")
-Luna:KeybindBox("Settings", "Menu Open / Close", Config.MenuKey, function(key) Config.MenuKey = key end)
-Luna:KeybindBox("Settings", "Unlock Mouse (Cursor)", Config.MouseUnlockKey, function(key) Config.MouseUnlockKey = key end)
-
-selectTab("Visuals")
-
-------------------------------------------------
--- OPTIMIZED LOOPS & CONTROLS
-------------------------------------------------
-local menuOpen = true
-local isTweening = false
-local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
-
-if Flags.Fullbright then applyFullbright(true) end
-if Flags.NoFog then applyNoFog(true) end
-if Flags.NoShadows then applyNoShadows(true) end
-if Flags.NoEffect then applyNoEffect(true) end
-if Flags.Crosshair then toggleCrosshair(true) end
-
-local function setupCharacter(char)
-    humanoid = char:WaitForChild("Humanoid", 5)
-    root = char:WaitForChild("HumanoidRootPart", 5)
-end
-
-if LocalPlayer.Character then setupCharacter(LocalPlayer.Character) end
-LocalPlayer.CharacterAdded:Connect(setupCharacter)
-
-local function ToggleMenuAnimation()
-    if isTweening then return end
-    isTweening = true
-    menuOpen = not menuOpen
-    
-    if menuOpen then
-        Main.Visible = true
-        local tween = TweenService:Create(Main, tweenInfo, {Size = UDim2.fromOffset(680, 520), Position = UDim2.new(0.5, -340, 0.5, -260)})
-        tween:Play()
-        tween.Completed:Connect(function() isTweening = false end)
-    else
-        local tween = TweenService:Create(Main, tweenInfo, {Size = UDim2.fromOffset(680, 0), Position = UDim2.new(0.5, -340, 0.5, 0)})
-        tween:Play()
-        tween.Completed:Connect(function()
-            if not menuOpen then Main.Visible = false end
-            isTweening = false
-        end)
-    end
-end
-
-local function ToggleMouse()
-    local current = UIS.MouseBehavior == Enum.MouseBehavior.Default
-    UIS.MouseIconEnabled = not current
-    UIS.MouseBehavior = current and Enum.MouseBehavior.LockCenter or Enum.MouseBehavior.Default
-end
-
-UIS.InputBegan:Connect(function(input, gp)
-    if UIS:GetFocusedTextBox() then return end
-
-    if input.KeyCode == Config.MenuKey then
-        ToggleMenuAnimation()
-    elseif input.KeyCode == Config.MouseUnlockKey then
-        ToggleMouse()
-    elseif input.KeyCode == Config.MoonwalkKey and Flags.Moonwalk then
-        backRun = not backRun
-    end
-end)
-
-local frameCount = 0
-RunService.RenderStepped:Connect(function(deltaTime)
-    frameCount = (frameCount + 1) % 10
-    
-    if Flags.FOVActive then
-        Camera.FieldOfView = Flags.FOVValue
-    end
-    if Flags.NoEffect then
-        applyNoEffect(true)
-    end
-
-    if (Flags.SurvivorESP or Flags.KillerESP) and frameCount == 0 then
-        for plr, data in pairs(playerCache) do
-            if plr.Parent and plr.Character and data.hl then
-                local killer = isPlayerKiller(plr)
-                local shouldShow = (killer and Flags.KillerESP) or (not killer and Flags.SurvivorESP)
-                
-                data.hl.Enabled = shouldShow
-                if data.gui then data.gui.Enabled = shouldShow end
-
-                if shouldShow then
-                    local color = killer and COLORS.Killer or COLORS.Survivor
-                    data.hl.FillColor, data.hl.OutlineColor = color, color
-                    if data.label then data.label.Text, data.label.TextColor3 = plr.Name, color end
-                end
-            end
-        end
-    end
-
-    if Flags.GeneratorESP and frameCount == 5 then
-        for model, data in pairs(generatorCache) do
-            if model and model.Parent and data.label then
-                local percent = model:GetAttribute("RepairProgress") or model:GetAttribute("Progress") or 0
-                data.label.Text = string.format("%.0f%%", percent)
-                
-                local isComplete = percent >= 100
-                local genColor = isComplete and COLORS.GeneratorComplete or COLORS.GeneratorIncomplete
-                
-                data.hl.Enabled = Flags.GeneratorESP
-                data.hl.FillColor, data.hl.OutlineColor = genColor, genColor
-            end
-        end
-    end
-
-    if Drawing then
-        for _, circle in pairs(aimbotDrawings) do
-            circle.Visible = false
-        end
-    end
-
-    if Flags.Aimbot and isPlayerKiller(LocalPlayer) then
-        local viewportCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-        local isMouseDown = UIS:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
-        local closestTargetPoint = nil
-        local minDistanceToCenter = math.huge
-
-        for plr, circle in pairs(aimbotDrawings) do
-            if isPlayerSurvivor(plr) and plr.Character then
-                local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
-                local humanoidTarget = plr.Character:FindFirstChildOfClass("Humanoid")
-                
-                if hrp and humanoidTarget and humanoidTarget.Health > 0 then
-                    local targetWorldPos = hrp.Position + Vector3_new(0, 2.0, 0)
-                    local aimWorldPoint = CalculateExactAimPoint(targetWorldPos)
-                    
-                    if aimWorldPoint then
-                        local screenPos, onScreen = Camera:WorldToViewportPoint(aimWorldPoint)
-
-                        if onScreen then
-                            if circle then
-                                circle.Position = Vector2.new(screenPos.X, screenPos.Y)
-                                circle.Visible = Flags.Aimbot
-                            end
-
-                            local distToCenter = (Vector2.new(screenPos.X, screenPos.Y) - viewportCenter).Magnitude
-                            if distToCenter < minDistanceToCenter then
-                                minDistanceToCenter = distToCenter
-                                closestTargetPoint = aimWorldPoint
-                            end
-                        end
-                    end
-                end
-            end
-        end
-
-        if isMouseDown and closestTargetPoint and minDistanceToCenter <= (Flags.AimFOV or 50) then
-            local startPos = Camera.CFrame.Position
-            local targetLookCFrame = CFrame_new(startPos, closestTargetPoint)
-            Camera.CFrame = Camera.CFrame:Lerp(targetLookCFrame, math_clamp(deltaTime * Flags.AimSmoothness * 10, 0, 1))
-        end
-    end
-
-    if not humanoid or not humanoid.Parent or not root or not root.Parent then
-        local char = LocalPlayer.Character
-        if char then
-            humanoid = char:FindFirstChildOfClass("Humanoid")
-            root = char:FindFirstChild("HumanoidRootPart")
-        end
-    end
-
-    if Flags.Moonwalk and backRun and humanoid and root and root.Parent then
-        local moveDirection = -root.CFrame.LookVector
-        humanoid:Move(moveDirection, false)
-    end
-end)
-
+-- Используем Heartbeat для ежекадрового мониторинга
 RunService.Heartbeat:Connect(function()
-    updateParryRing()
-
-    if LocalPlayer.Character then
-        local targetBoost = Flags.SpeedBoostActive and (1.0 + (Flags.SpeedBoostValue / 100)) or 1.0
-        local currentBoost = LocalPlayer.Character:GetAttribute("speedboost")
-        if currentBoost ~= targetBoost then
-            LocalPlayer.Character:SetAttribute("speedboost", targetBoost)
-        end
-    end
+    pcall(checkNearbyTargets)
 end)
+
+print("[Luna Script] Скрипт успешно запущен и мониторит радиус!")
+
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local Players  = game:GetService("Players")
+
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui   = LocalPlayer:WaitForChild("PlayerGui")
+
+local cachedCheck = nil
+local cachedLine  = nil
+local cachedGoal  = nil
 
 local function LineInGoal(line, goal)
     local lr = line.Rotation % 360
@@ -2077,22 +110,464 @@ local function LineInGoal(line, goal)
     return gs > ge and (lr >= gs or lr <= ge) or (lr >= gs and lr <= ge)
 end
 
+local function watchCheck(check)
+    cachedCheck = check
+    cachedLine  = check:WaitForChild("Line", 5)
+    cachedGoal  = check:WaitForChild("Goal", 5)
+    check.AncestryChanged:Connect(function()
+        if not check.Parent then
+            cachedCheck = nil
+            cachedLine  = nil
+            cachedGoal  = nil
+        end
+    end)
+end
+
+local function watchGui(gui)
+    local check = gui:FindFirstChild("Check")
+    if check then watchCheck(check) end
+    gui.ChildAdded:Connect(function(child)
+        if child.Name == "Check" then watchCheck(child) end
+    end)
+    gui.AncestryChanged:Connect(function()
+        if not gui.Parent then
+            cachedCheck = nil
+            cachedLine  = nil
+            cachedGoal  = nil
+        end
+    end)
+end
+
+local existing = PlayerGui:FindFirstChild("SkillCheckPromptGui")
+if existing then watchGui(existing) end
+
+PlayerGui.ChildAdded:Connect(function(child)
+    if child.Name == "SkillCheckPromptGui" then watchGui(child) end
+end)
+
 task.spawn(function()
     while true do
-        task.wait(0.015)
-        if Flags.AutoSkill and LocalPlayer.Team and LocalPlayer.Team.Name == "Survivors" then
-            local pg = LocalPlayer:FindFirstChild("PlayerGui")
-            local checkGui = pg and pg:FindFirstChild("SkillCheckPromptGui")
-            local check = checkGui and checkGui:FindFirstChild("Check")
-            if check and check.Visible then
-                local line = check:FindFirstChild("Line")
-                local goal = check:FindFirstChild("Goal")
-                if line and goal and LineInGoal(line, goal) then
-                    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
-                    task.wait(0.01)
-                    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
-                end
+        task.wait(1/60)
+        local check = cachedCheck
+        if check and check.Visible then
+            local line = cachedLine
+            local goal = cachedGoal
+            if line and goal and LineInGoal(line, goal) then
+                VirtualInputManager:SendKeyEvent(true,  Enum.KeyCode.Space, false, game)
+                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
+                task.wait(0.1)
             end
         end
     end
+end)
+
+local Players = game:GetService("Players")
+local localPlayer = Players.LocalPlayer
+
+-- Кэш: player -> последний цвет (не трогаем highlight если цвет не изменился)
+local colorCache = {}
+-- Кэш соединений для чистки при выходе игрока
+local connections = {}
+
+local function getPlayerRole(player)
+    if player.Team then
+        return player.Team.Name
+    end
+    for _, attrName in ipairs({"Role", "Team", "Class", "Status"}) do
+        local val = player:GetAttribute(attrName)
+        if val and type(val) == "string" then return val end
+    end
+    for _, child in ipairs(player:GetChildren()) do
+        if (child:IsA("StringValue") or child:IsA("ObjectValue"))
+            and (child.Name == "Role" or child.Name == "Team") then
+            return tostring(child.Value)
+        end
+    end
+    return "Unknown"
+end
+
+local ROLE_COLORS = {
+    survivor  = Color3.fromRGB(50, 255, 50),
+    killer    = Color3.fromRGB(255, 0, 0),
+    spectator = Color3.fromRGB(255, 255, 255),
+}
+local DEFAULT_COLOR = Color3.fromRGB(200, 200, 200)
+
+local function getRoleColor(roleName)
+    local lower = string.lower(tostring(roleName))
+    for key, color in pairs(ROLE_COLORS) do
+        if string.find(lower, key, 1, true) then return color end
+    end
+    return DEFAULT_COLOR
+end
+
+local function applyHighlight(character, color)
+    if not character then return end
+    local highlight = character:FindFirstChild("ExecutorHighlight")
+    if not highlight then
+        highlight = Instance.new("Highlight")
+        highlight.Name          = "ExecutorHighlight"
+        highlight.Adornee       = character
+        highlight.FillTransparency    = 1
+        highlight.OutlineTransparency = 0
+        highlight.Parent        = character
+    end
+    if highlight.FillColor ~= color then
+        highlight.FillColor    = color
+        highlight.OutlineColor = color
+    end
+end
+
+-- Обновляет highlight только если цвет реально изменился
+local function refreshPlayer(player)
+    local char = player.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    local color = getRoleColor(getPlayerRole(player))
+    if colorCache[player] == color then return end  -- ничего не изменилось — выходим
+    colorCache[player] = color
+    applyHighlight(char, color)
+end
+
+local function setupPlayer(player)
+    if player == localPlayer then return end
+
+    local playerConns = {}
+    connections[player] = playerConns
+
+    -- Highlight при каждом спавне персонажа
+    playerConns[#playerConns+1] = player.CharacterAdded:Connect(function(char)
+        -- Ждём HumanoidRootPart (безопасно, без polling)
+        if not char:FindFirstChild("HumanoidRootPart") then
+            char:WaitForChild("HumanoidRootPart", 10)
+        end
+        colorCache[player] = nil  -- сброс кэша — новый персонаж
+        refreshPlayer(player)
+    end)
+
+    -- Реагируем мгновенно на смену роли через атрибут
+    playerConns[#playerConns+1] = player.AttributeChanged:Connect(function(attr)
+        if attr == "Role" or attr == "Team" or attr == "Class" or attr == "Status" then
+            refreshPlayer(player)
+        end
+    end)
+
+    -- Реагируем на смену команды (Team)
+    playerConns[#playerConns+1] = player:GetPropertyChangedSignal("Team"):Connect(function()
+        refreshPlayer(player)
+    end)
+
+    -- Следим за дочерними StringValue/ObjectValue с именем Role/Team
+    playerConns[#playerConns+1] = player.ChildAdded:Connect(function(child)
+        if (child:IsA("StringValue") or child:IsA("ObjectValue"))
+            and (child.Name == "Role" or child.Name == "Team") then
+            refreshPlayer(player)
+            -- Следим за изменением значения внутри
+            child.Changed:Connect(function()
+                refreshPlayer(player)
+            end)
+        end
+    end)
+
+    -- Если персонаж уже есть при подключении скрипта
+    if player.Character then
+        colorCache[player] = nil
+        refreshPlayer(player)
+    end
+end
+
+local function cleanupPlayer(player)
+    colorCache[player] = nil
+    if connections[player] then
+        for _, conn in ipairs(connections[player]) do
+            conn:Disconnect()
+        end
+        connections[player] = nil
+    end
+end
+
+-- Инициализация всех уже подключённых игроков
+for _, player in ipairs(Players:GetPlayers()) do
+    task.spawn(setupPlayer, player)
+end
+
+Players.PlayerAdded:Connect(setupPlayer)
+Players.PlayerRemoving:Connect(cleanupPlayer)
+
+local Workspace  = game:GetService("Workspace")
+local Players    = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local camera         = Workspace.CurrentCamera
+local generatorCache = {}
+
+local GENERATOR_COLOR = Color3.fromRGB(255, 220, 0)
+local PROGRESS_ATTRS  = {"Progress", "RepairProgress", "Completion", "Repair", "State"}
+local COMPLETED_ATTRS = {"IsCompleted", "Completed", "Fixed"}
+
+local function normalizeProgress(val)
+    if type(val) ~= "number" then return nil end
+    return val <= 1 and (val * 100) or val
+end
+
+local function getRawProgress(genModel)
+    for _, attr in ipairs(PROGRESS_ATTRS) do
+        local v = normalizeProgress(genModel:GetAttribute(attr))
+        if v then return v end
+    end
+    for _, child in ipairs(genModel:GetChildren()) do
+        if child:IsA("NumberValue") or child:IsA("IntValue") then
+            local n = string.lower(child.Name)
+            if string.find(n, "progress", 1, true)
+            or string.find(n, "repair",   1, true)
+            or string.find(n, "percent",  1, true) then
+                local v = normalizeProgress(child.Value)
+                if v then return v end
+            end
+        end
+    end
+    return 0
+end
+
+local function checkCompleted(genModel)
+    for _, attr in ipairs(COMPLETED_ATTRS) do
+        if genModel:GetAttribute(attr) == true then return true end
+    end
+    return false
+end
+
+local function removeESP(genModel)
+    local c = generatorCache[genModel]
+    if not c then return end
+    if c.highlight then c.highlight:Destroy() end
+    if c.billboard then c.billboard:Destroy() end
+    for _, conn in ipairs(c.connections) do conn:Disconnect() end
+    generatorCache[genModel] = nil
+end
+
+local function setupESP(genModel)
+    if generatorCache[genModel] then return end
+    if checkCompleted(genModel) then return end
+
+    local rootPart = genModel.PrimaryPart
+        or genModel:FindFirstChild("Hitbox")
+        or genModel:FindFirstChildWhichIsA("BasePart")
+    if not rootPart then return end
+
+    local highlight = Instance.new("Highlight")
+    highlight.Name                = "GenHighlight"
+    highlight.Adornee             = genModel
+    highlight.FillTransparency    = 1
+    highlight.OutlineColor        = GENERATOR_COLOR
+    highlight.OutlineTransparency = 0
+    highlight.Parent              = genModel
+
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name        = "GenESP_GUI"
+    billboard.Adornee     = rootPart
+    billboard.StudsOffset = Vector3.new(0, 1.2, 0)
+    billboard.AlwaysOnTop = true
+    billboard.Size        = UDim2.new(0, 80, 0, 28)
+
+    local label = Instance.new("TextLabel")
+    label.Size                   = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.TextColor3             = GENERATOR_COLOR
+    label.TextStrokeTransparency = 0
+    label.TextScaled             = true
+    label.Font                   = Enum.Font.SourceSansBold
+    label.Parent                 = billboard
+
+    billboard.Parent = genModel
+
+    local initProgress = getRawProgress(genModel)
+
+    -- Текст сразу при 0% — не ждёт лерпа
+    label.Text = string.format("%.1f%%", initProgress)
+
+    local connections = {}
+
+    local cache = {
+        highlight       = highlight,
+        billboard       = billboard,
+        label           = label,
+        rootPart        = rootPart,
+        targetProgress  = initProgress,
+        displayProgress = initProgress,
+        lastH           = nil,
+        connections     = connections,
+    }
+    generatorCache[genModel] = cache
+
+    connections[#connections+1] = genModel.AttributeChanged:Connect(function(attr)
+        local c = generatorCache[genModel]
+        if not c then return end
+        for _, a in ipairs(COMPLETED_ATTRS) do
+            if attr == a and genModel:GetAttribute(a) == true then
+                removeESP(genModel) return
+            end
+        end
+        for _, a in ipairs(PROGRESS_ATTRS) do
+            if attr == a then
+                local v = normalizeProgress(genModel:GetAttribute(a))
+                if v then
+                    c.targetProgress = v
+                    if v >= 100 then removeESP(genModel) end
+                end
+                return
+            end
+        end
+    end)
+
+    local function watchChild(child)
+        if not (child:IsA("NumberValue") or child:IsA("IntValue")) then return end
+        local n = string.lower(child.Name)
+        if not (string.find(n, "progress", 1, true)
+             or string.find(n, "repair",   1, true)
+             or string.find(n, "percent",  1, true)) then return end
+
+        connections[#connections+1] = child.Changed:Connect(function(val)
+            local c = generatorCache[genModel]
+            if not c then return end
+            local v = normalizeProgress(val)
+            if v then
+                c.targetProgress = v
+                if v >= 100 then removeESP(genModel) end
+            end
+        end)
+    end
+
+    for _, child in ipairs(genModel:GetChildren()) do watchChild(child) end
+    connections[#connections+1] = genModel.ChildAdded:Connect(watchChild)
+
+    connections[#connections+1] = genModel.AncestryChanged:Connect(function()
+        if not genModel.Parent then removeESP(genModel) end
+    end)
+end
+
+local function isGenerator(obj)
+    if not obj:IsA("Model") then return false end
+    local n = string.lower(obj.Name)
+    if not string.find(n, "generator", 1, true) then return false end
+    return obj:FindFirstChildWhichIsA("BasePart") ~= nil
+end
+
+for _, obj in ipairs(Workspace:GetDescendants()) do
+    if isGenerator(obj) then pcall(setupESP, obj) end
+end
+
+Workspace.DescendantAdded:Connect(function(obj)
+    if isGenerator(obj) then
+        task.defer(function() pcall(setupESP, obj) end)
+    end
+end)
+
+RunService.RenderStepped:Connect(function(dt)
+    local camPos = camera.CFrame.Position
+
+    for _, cache in pairs(generatorCache) do
+        -- Плавный лерп прогресса
+        local diff = cache.targetProgress - cache.displayProgress
+        if math.abs(diff) > 0.005 then
+            cache.displayProgress = cache.displayProgress + diff * math.min(dt * 5, 1)
+            cache.label.Text = string.format("%.1f%%", cache.displayProgress)
+        end
+
+        -- Масштаб: близко мельче, далеко крупнее — обратная зависимость
+        -- UDim2 выделяется только при реальном изменении размера
+        local rp = cache.rootPart
+        if rp and rp.Parent then
+            local dist = (camPos - rp.Position).Magnitude
+            local h = math.clamp(math.floor(350 / math.max(dist, 1)), 14, 38)
+            if cache.lastH ~= h then
+                cache.lastH = h
+                cache.billboard.Size = UDim2.new(0, h * 3, 0, h)
+            end
+        end
+    end
+end)
+
+local Lighting   = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+
+-- Все классы визуальных эффектов которые убираем
+local EFFECT_CLASSES = {
+    ["BlurEffect"]             = true,
+    ["ColorCorrectionEffect"]  = true,
+    ["BloomEffect"]            = true,
+    ["SunRaysEffect"]          = true,
+    ["DepthOfFieldEffect"]     = true,
+    ["BlackAndWhiteEffect"]    = true,
+}
+
+-- Дефолтные настройки Lighting — чистая картинка без перебора
+local CLEAN_LIGHTING = {
+    Brightness        = 2,
+    Ambient           = Color3.fromRGB(70, 70, 70),
+    OutdoorAmbient    = Color3.fromRGB(100, 100, 100),
+    ColorShift_Bottom = Color3.fromRGB(0, 0, 0),
+    ColorShift_Top    = Color3.fromRGB(0, 0, 0),
+    ExposureCompensation = 0,
+    FogEnd            = 100000,
+    FogStart          = 0,
+    GlobalShadows     = true,
+}
+
+-- Убираем один эффект если он в списке
+local function removeEffect(obj)
+    if EFFECT_CLASSES[obj.ClassName] then
+        obj:Destroy()
+    end
+end
+
+-- Сброс свойств Lighting к чистым значениям
+local function cleanLighting()
+    for prop, val in pairs(CLEAN_LIGHTING) do
+        pcall(function() Lighting[prop] = val end)
+    end
+end
+
+-- Убираем все текущие эффекты в Lighting
+local function removeAllEffects()
+    for _, obj in ipairs(Lighting:GetChildren()) do
+        removeEffect(obj)
+    end
+end
+
+-- Первичная чистка
+cleanLighting()
+removeAllEffects()
+
+-- Игра добавляет новый эффект — убиваем мгновенно
+Lighting.ChildAdded:Connect(function(obj)
+    task.defer(function()
+        removeEffect(obj)
+    end)
+end)
+
+-- Некоторые игры при respawn сбрасывают Lighting через свойства а не через потомков
+-- PropertyChanged ловит это без polling
+local WATCHED_PROPS = {
+    "Brightness", "Ambient", "OutdoorAmbient",
+    "ColorShift_Bottom", "ColorShift_Top",
+    "ExposureCompensation", "FogEnd", "FogStart",
+}
+
+for _, prop in ipairs(WATCHED_PROPS) do
+    pcall(function()
+        Lighting:GetPropertyChangedSignal(prop):Connect(function()
+            local target = CLEAN_LIGHTING[prop]
+            if target and Lighting[prop] ~= target then
+                pcall(function() Lighting[prop] = target end)
+            end
+        end)
+    end)
+end
+
+-- Respawn detection: LocalPlayer respawn = игра могла сбросить Lighting
+local player = game:GetService("Players").LocalPlayer
+player.CharacterAdded:Connect(function()
+    task.defer(function()
+        cleanLighting()
+        removeAllEffects()
+    end)
 end)
